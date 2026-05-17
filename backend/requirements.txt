@@ -12,3 +12,4 @@ web3
 httpx
 pytest
 pytest-asyncio
+psycopg2-binary
