@@ -10,6 +10,7 @@ from app.core.security import (
     verify_password,
 )
 from app.models.user import User
+from app.repositories.audit_repository import AuditRepository
 from app.repositories.user_repository import UserRepository
 from app.schemas.auth import LoginRequest, RegisterRequest
 
@@ -20,6 +21,7 @@ logger = logging.getLogger(__name__)
 class AuthService:
     def __init__(self) -> None:
         self._users = UserRepository()
+        self._audit = AuditRepository()
 
     async def register(
         self, session: AsyncSession, data: RegisterRequest
@@ -40,6 +42,7 @@ class AuthService:
             hashed_password=hashed,
             confirmation_token=confirmation_token,
         )
+        await self._audit.create_entry(session, "USER_REGISTERED", actor_id=user.id, data={"email": user.email})
         await session.commit()
         await session.refresh(user)
 
@@ -72,7 +75,10 @@ class AuthService:
                 detail="Email not confirmed",
             )
 
-        return create_access_token(sub=str(user.id), role=user.role)
+        token = create_access_token(sub=str(user.id), role=user.role)
+        await self._audit.create_entry(session, "USER_LOGIN", actor_id=user.id)
+        await session.commit()
+        return token
 
     async def confirm_email(
         self, session: AsyncSession, token: str
@@ -85,6 +91,7 @@ class AuthService:
             )
 
         await self._users.mark_confirmed(session, user)
+        await self._audit.create_entry(session, "USER_CONFIRMED", actor_id=user.id)
         await session.commit()
         await session.refresh(user)
         return user
