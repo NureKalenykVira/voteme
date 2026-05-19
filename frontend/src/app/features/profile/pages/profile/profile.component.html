@@ -1,0 +1,39 @@
+<div class="profile-page">
+  <div class="card">
+    <h1 class="title">Profile</h1>
+
+    <ng-container [ngSwitch]="state()">
+      <p *ngSwitchCase="'loading'" class="status">Loading profile...</p>
+
+      <p *ngSwitchCase="'error'" class="status status-error">
+        Could not load profile. Please log in again.
+      </p>
+
+      <div *ngSwitchCase="'ready'" class="rows">
+        <div class="row">
+          <span class="label">Email</span>
+          <span class="value">{{ user()?.email }}</span>
+        </div>
+
+        <div class="row" *ngIf="user()?.full_name">
+          <span class="label">Full name</span>
+          <span class="value">{{ user()?.full_name }}</span>
+        </div>
+
+        <div class="row">
+          <span class="label">Role</span>
+          <span class="value">{{ roleLabel(user()!.role) }}</span>
+        </div>
+
+        <div class="row">
+          <span class="label">Created at</span>
+          <span class="value">{{ user()?.created_at | date: 'medium' }}</span>
+        </div>
+      </div>
+    </ng-container>
+
+    <div class="actions">
+      <ui-primary-button type="button" (click)="onLogout()">Log out</ui-primary-button>
+    </div>
+  </div>
+</div>

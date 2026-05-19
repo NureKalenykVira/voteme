@@ -1,0 +1,23 @@
+.btn {
+  display: block;
+  width: 100%;
+  background: #c8f135;
+  color: #1a1a1a;
+  font-family: inherit;
+  font-size: 18px;
+  font-weight: 700;
+  border: none;
+  border-radius: 100px;
+  padding: 13px;
+  cursor: pointer;
+  transition: background 0.15s;
+
+  &:hover:not(:disabled) {
+    background: #b8e020;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}

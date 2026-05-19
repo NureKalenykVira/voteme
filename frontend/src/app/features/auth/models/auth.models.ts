@@ -3,6 +3,7 @@ export type Role = 'global_admin' | 'organizer' | 'voter' | 'auditor';
 export interface RegisterRequest {
   email: string;
   password: string;
+  full_name?: string | null;
 }
 
 export interface LoginRequest {
@@ -18,6 +19,7 @@ export interface TokenResponse {
 export interface UserResponse {
   id: string;
   email: string;
+  full_name: string | null;
   role: Role;
   is_confirmed: boolean;
   created_at: string;

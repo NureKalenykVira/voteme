@@ -1,0 +1,41 @@
+.card {
+  position: relative;
+  z-index: 1;
+  background: #5A49FF;
+  border-radius: 50px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+  padding: 48px 44px 44px;
+  width: 480px;
+  max-width: calc(100vw - 32px);
+  max-height: calc(100vh - 32px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0;
+}
+
+.title {
+  color: #fff;
+  font-size: 26px;
+  font-weight: 700;
+  text-align: center;
+  margin: 0 0 16px;
+}
+
+.message {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 15px;
+  text-align: center;
+  margin: 0 0 28px;
+  line-height: 1.5;
+}
+
+.loading-text {
+  font-size: 17px;
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0;
+}
+
+.separator {
+  height: 12px;
+}

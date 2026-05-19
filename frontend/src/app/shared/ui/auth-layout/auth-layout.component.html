@@ -1,0 +1,9 @@
+<div class="auth-page">
+  <div class="bg-layer" aria-hidden="true">
+    <img [class]="vectorLogin ? 'vector vector-login' : 'vector'" [src]="vector" alt="" />
+    <div class="deco-block">
+      <span *ngFor="let w of decoWords" class="deco" [ngClass]="w.cls">{{ w.text }}</span>
+    </div>
+  </div>
+  <ng-content />
+</div>

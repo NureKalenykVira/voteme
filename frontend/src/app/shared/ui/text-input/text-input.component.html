@@ -1,0 +1,15 @@
+<div class="field">
+  <label [for]="id" class="label">{{ label }}</label>
+  <input
+    [id]="id"
+    [type]="type"
+    class="input"
+    [class.invalid]="hasError"
+    [placeholder]="placeholder"
+    [autocomplete]="autocomplete"
+    [value]="_value"
+    (input)="onInput($event)"
+    (blur)="onTouched()"
+  />
+  <span *ngIf="hasError && errorMessage" class="error-msg">{{ errorMessage }}</span>
+</div>

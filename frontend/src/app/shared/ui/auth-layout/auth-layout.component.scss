@@ -1,0 +1,56 @@
+.auth-page {
+  min-height: 100vh;
+  max-height: 100vh;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  position: relative;
+}
+
+.bg-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.vector {
+  position: absolute;
+  left: -6%;
+  top: -35%;
+  height: 150%;
+  width: auto;
+}
+
+.deco-block {
+  position: absolute;
+  top: -15px;
+  right: -20px;
+  text-align: right;
+  user-select: none;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.deco {
+  display: block;
+  font-size: clamp(90px, 13vw, 180px);
+  font-weight: 900;
+  letter-spacing: -2px;
+  line-height: 0.75;
+}
+
+.deco-join { color: #D0CFFF; }
+.deco-vote { color: #DEDEDE; }
+.deco-me   { color: #C8F135; opacity: 0.55; }
+
+.vector-login {
+  position: absolute;
+  width: 115%;
+  height: auto;
+  left: -8%;
+  top: -25%;
+}
