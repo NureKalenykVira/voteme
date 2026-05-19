@@ -14,6 +14,7 @@ _PASSWORD_DIGIT_RE = re.compile(r"\d")
 class RegisterRequest(BaseModel):
     email: EmailStr
     password: str
+    full_name: str | None = None
 
     @field_validator("password")
     @classmethod
@@ -40,6 +41,7 @@ class TokenResponse(BaseModel):
 class UserResponse(BaseModel):
     id: uuid.UUID
     email: EmailStr
+    full_name: str | None = None
     role: Role
     is_confirmed: bool
     created_at: datetime

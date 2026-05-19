@@ -30,11 +30,13 @@ class UserRepository:
         email: str,
         hashed_password: str,
         confirmation_token: str,
+        full_name: Optional[str] = None,
     ) -> User:
         user = User(
             email=email.lower(),
             hashed_password=hashed_password,
             confirmation_token=confirmation_token,
+            full_name=full_name,
         )
         session.add(user)
         await session.flush()

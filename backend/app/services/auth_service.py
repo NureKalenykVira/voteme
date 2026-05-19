@@ -13,9 +13,12 @@ from app.models.user import User
 from app.repositories.audit_repository import AuditRepository
 from app.repositories.user_repository import UserRepository
 from app.schemas.auth import LoginRequest, RegisterRequest
+from app.services.email_service import EmailService
 
 
 logger = logging.getLogger(__name__)
+
+_email_service = EmailService()
 
 
 class AuthService:
@@ -41,16 +44,19 @@ class AuthService:
             email=data.email,
             hashed_password=hashed,
             confirmation_token=confirmation_token,
+            full_name=data.full_name,
         )
         await self._audit.create_entry(session, "USER_REGISTERED", actor_id=user.id, data={"email": user.email})
         await session.commit()
         await session.refresh(user)
 
-        logger.info(
-            "Confirmation token for %s: %s",
-            data.email,
-            confirmation_token,
-        )
+        try:
+            await _email_service.send_confirmation_email(user.email, confirmation_token)
+        except Exception:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to send confirmation email",
+            )
         return user
 
     async def login(

@@ -1,10 +1,11 @@
 import uuid
-from typing import AsyncGenerator
+from typing import AsyncGenerator, Callable
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.enums import Role
 from app.core.security import decode_access_token
 from app.database.session import get_db as _get_db
 from app.models.user import User
@@ -51,3 +52,11 @@ async def get_current_user(
             detail="User not found",
         )
     return user
+
+
+def require_role(*roles: Role) -> Callable[[User], User]:
+    async def _checker(current_user: User = Depends(get_current_user)) -> User:
+        if current_user.role not in roles:
+            raise HTTPException(status_code=403, detail="Insufficient permissions")
+        return current_user
+    return _checker
