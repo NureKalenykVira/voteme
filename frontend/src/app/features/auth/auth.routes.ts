@@ -17,6 +17,11 @@ export const AUTH_ROUTES: Routes = [
       import('./pages/confirm-email/confirm-email.component').then(m => m.ConfirmEmailComponent),
   },
   {
+    path: 'reset-password',
+    loadComponent: () =>
+      import('./pages/reset-password/reset-password.component').then(m => m.ResetPasswordComponent),
+  },
+  {
     path: '',
     redirectTo: 'register',
     pathMatch: 'full',

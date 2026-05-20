@@ -23,8 +23,18 @@ export interface UserResponse {
   role: Role;
   is_confirmed: boolean;
   created_at: string;
+  avatar_url?: string | null;
 }
 
 export interface ConfirmEmailResponse {
   message: string;
+}
+
+export interface ForgotPasswordRequest {
+  email: string;
+}
+
+export interface ResetPasswordRequest {
+  token: string;
+  new_password: string;
 }

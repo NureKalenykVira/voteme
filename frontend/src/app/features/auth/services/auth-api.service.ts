@@ -31,4 +31,29 @@ export class AuthApiService {
   me(): Observable<UserResponse> {
     return this.http.get<UserResponse>(`${environment.apiUrl}/auth/me`);
   }
+
+  updateProfile(data: { full_name: string | null }): Observable<UserResponse> {
+    return this.http.patch<UserResponse>(`${environment.apiUrl}/auth/me`, data);
+  }
+
+  uploadAvatar(file: File): Observable<UserResponse> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post<UserResponse>(`${environment.apiUrl}/auth/me/avatar`, formData);
+  }
+
+  deleteAccount(): Observable<void> {
+    return this.http.delete<void>(`${environment.apiUrl}/auth/me`);
+  }
+
+  forgotPassword(email: string): Observable<void> {
+    return this.http.post<void>(`${environment.apiUrl}/auth/forgot-password`, { email });
+  }
+
+  resetPassword(token: string, newPassword: string): Observable<void> {
+    return this.http.post<void>(`${environment.apiUrl}/auth/reset-password`, {
+      token,
+      new_password: newPassword,
+    });
+  }
 }

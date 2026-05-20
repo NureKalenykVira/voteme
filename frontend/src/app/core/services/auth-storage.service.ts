@@ -1,5 +1,6 @@
 import { computed, Injectable, signal } from '@angular/core';
 import { Signal } from '@angular/core';
+import { Role } from '../../features/auth/models/auth.models';
 
 @Injectable({ providedIn: 'root' })
 export class AuthStorageService {
@@ -9,6 +10,18 @@ export class AuthStorageService {
 
   getToken(): string | null {
     return this._token();
+  }
+
+  getRole(): Role | null {
+    const token = this._token();
+    if (!token) return null;
+    try {
+      const base64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+      const payload = JSON.parse(atob(base64)) as { role?: string };
+      return (payload.role as Role) ?? null;
+    } catch {
+      return null;
+    }
   }
 
   setToken(token: string): void {
