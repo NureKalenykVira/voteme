@@ -1,0 +1,17 @@
+.badge {
+  display: inline-block;
+  font-weight: 700;
+  border-radius: 100px;
+  padding: 8px 20px;
+  font-size: 15px;
+
+  &.purple {
+    background: #5A49FF;
+    color: #fff;
+  }
+
+  &.lime {
+    background: #C8F135;
+    color: #111;
+  }
+}

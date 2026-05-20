@@ -1,0 +1,27 @@
+.link-btn {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border: 2px solid #111;
+  border-radius: 100px;
+  padding: 10px 20px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.15s;
+  color: #111;
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.05);
+  }
+}
+
+.link-label {
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.link-arrow {
+  width: 20px;
+  height: 20px;
+  filter: brightness(0);
+}

@@ -1,0 +1,54 @@
+.avatar-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.avatar-circle {
+  width: 140px;
+  height: 140px;
+  border-radius: 30px;
+  border: 3px solid #5A49FF;
+  overflow: hidden;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f0f0f0;
+  transition: opacity 0.15s;
+
+  &:hover {
+    opacity: 0.85;
+  }
+}
+
+.avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatar-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  background: #e8e8e8;
+}
+
+.reset-text {
+  font-size: 12px;
+  color: #888;
+  cursor: pointer;
+  text-decoration: none;
+
+  &:hover {
+    opacity: 0.75;
+  }
+}
+
+.file-input-hidden {
+  display: none;
+}
