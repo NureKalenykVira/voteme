@@ -1,5 +1,6 @@
 import logging
 import secrets
+from datetime import datetime, timedelta, timezone
 
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -12,7 +13,7 @@ from app.core.security import (
 from app.models.user import User
 from app.repositories.audit_repository import AuditRepository
 from app.repositories.user_repository import UserRepository
-from app.schemas.auth import LoginRequest, RegisterRequest
+from app.schemas.auth import LoginRequest, RegisterRequest, UpdateProfileRequest
 from app.services.email_service import EmailService
 
 
@@ -101,3 +102,101 @@ class AuthService:
         await session.commit()
         await session.refresh(user)
         return user
+
+    async def update_profile(
+        self, session: AsyncSession, user: User, data: UpdateProfileRequest
+    ) -> User:
+        updated_fields: list[str] = []
+        if data.full_name is not None and data.full_name != user.full_name:
+            user = await self._users.update(session, user, full_name=data.full_name)
+            updated_fields.append("full_name")
+        if updated_fields:
+            await self._audit.create_entry(
+                session,
+                "USER_PROFILE_UPDATED",
+                actor_id=user.id,
+                data={"updated_fields": updated_fields},
+            )
+        await session.commit()
+        await session.refresh(user)
+        return user
+
+    async def delete_account(
+        self, session: AsyncSession, user: User
+    ) -> None:
+        now = datetime.now(timezone.utc)
+        # Write audit BEFORE soft delete so actor_id FK is still resolvable
+        await self._audit.create_entry(
+            session,
+            "USER_DELETED",
+            actor_id=user.id,
+            data={"email": user.email},
+        )
+        # Soft delete + anonymize PII — format preserves user_id and timestamp for traceability
+        ts = int(now.timestamp())
+        anon_email = f"deleted_{user.id}_{ts}@deleted.local"
+        await self._users.update(
+            session,
+            user,
+            is_deleted=True,
+            deleted_at=datetime.now(timezone.utc),
+            email=anon_email,
+            full_name=None,
+            confirmation_token=None,
+        )
+        await session.commit()
+
+    async def request_password_reset(
+        self, session: AsyncSession, email: str
+    ) -> None:
+        """Always returns without error regardless of whether email exists (prevents user enumeration)."""
+        user = await self._users.get_by_email(session, email)
+        if user is None or not user.is_confirmed:
+            return
+
+        token = secrets.token_urlsafe(32)
+        expires_at = datetime.now(timezone.utc) + timedelta(hours=1)
+        await self._users.update(
+            session,
+            user,
+            password_reset_token=token,
+            password_reset_token_expires_at=expires_at,
+        )
+        await session.commit()
+
+        try:
+            await _email_service.send_password_reset_email(user.email, token)
+        except Exception:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to send reset email",
+            )
+
+    async def reset_password(
+        self, session: AsyncSession, token: str, new_password: str
+    ) -> None:
+        user = await self._users.get_by_reset_token(session, token)
+        if user is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid or expired reset token",
+            )
+        if (
+            user.password_reset_token_expires_at is None
+            or datetime.now(timezone.utc) > user.password_reset_token_expires_at
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid or expired reset token",
+            )
+
+        hashed = hash_password(new_password)
+        await self._users.update(
+            session,
+            user,
+            hashed_password=hashed,
+            password_reset_token=None,
+            password_reset_token_expires_at=None,
+        )
+        await self._audit.create_entry(session, "USER_PASSWORD_RESET", actor_id=user.id)
+        await session.commit()

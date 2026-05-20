@@ -12,7 +12,7 @@ class UserRepository:
     ) -> Optional[User]:
         normalized = email.lower()
         result = await session.execute(
-            select(User).where(User.email == normalized)
+            select(User).where(User.email == normalized, User.is_deleted == False)  # noqa: E712
         )
         return result.scalar_one_or_none()
 
@@ -47,5 +47,24 @@ class UserRepository:
     ) -> User:
         user.is_confirmed = True
         user.confirmation_token = None
+        await session.flush()
+        return user
+
+    async def get_by_reset_token(
+        self, session: AsyncSession, token: str
+    ) -> Optional[User]:
+        result = await session.execute(
+            select(User).where(
+                User.password_reset_token == token,
+                User.is_deleted == False,  # noqa: E712
+            )
+        )
+        return result.scalar_one_or_none()
+
+    async def update(
+        self, session: AsyncSession, user: User, **kwargs: object
+    ) -> User:
+        for key, value in kwargs.items():
+            setattr(user, key, value)
         await session.flush()
         return user

@@ -12,6 +12,7 @@ email-validator
 web3
 httpx
 aiosmtplib>=3.0,<4.0
+aiofiles>=23.0,<25.0
 pytest
 pytest-asyncio>=0.23
 psycopg2-binary
