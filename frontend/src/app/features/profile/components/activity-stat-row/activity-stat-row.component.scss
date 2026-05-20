@@ -1,0 +1,18 @@
+.stat-row {
+  border: 2px solid #111;
+  border-radius: 100px;
+  padding: 10px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 15px;
+}
+
+.stat-label {
+  color: #111;
+}
+
+.stat-value {
+  font-weight: 700;
+  color: #111;
+}

@@ -1,6 +1,13 @@
-from fastapi import FastAPI
+import os
 
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+
+from app.api.routers.audit import router as audit_router
+from app.api.routers.auth import router as auth_router
 from app.api.routers.health import router as health_router
+from app.core.config import settings
 
 app = FastAPI(
     title="VoteMe API",
@@ -8,4 +15,18 @@ app = FastAPI(
     description="Backend API for VoteMe blockchain-oriented electronic voting platform.",
 )
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.cors_origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Ensure uploads directory exists and serve static files
+os.makedirs("uploads/avatars", exist_ok=True)
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+
 app.include_router(health_router)
+app.include_router(auth_router, prefix="/auth")
+app.include_router(audit_router, prefix="/audit")

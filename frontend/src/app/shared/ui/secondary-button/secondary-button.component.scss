@@ -1,0 +1,26 @@
+.btn {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  background: transparent;
+  border: 2px solid rgba(255, 255, 255, 0.55);
+  border-radius: 100px;
+  color: rgba(255, 255, 255, 0.8);
+  font-family: inherit;
+  font-size: 15px;
+  padding: 11px 18px;
+  cursor: pointer;
+  transition: border-color 0.15s;
+
+  &:hover {
+    border-color: rgba(255, 255, 255, 0.9);
+  }
+}
+
+.arrow-icon {
+  width: 20px;
+  height: 20px;
+  display: block;
+  flex-shrink: 0;
+}

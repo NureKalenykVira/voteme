@@ -1,0 +1,35 @@
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  cursor: pointer;
+}
+
+.custom-checkbox {
+  flex-shrink: 0;
+  width: 22px;
+  height: 20px;
+  border-radius: 6px;
+  background: #252529;
+  border: 1.5px solid #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.15s;
+
+  &.checked {
+    border-color: #C8F135;
+  }
+}
+
+.checkmark {
+  width: 10px;
+  height: 8px;
+}
+
+.checkbox-label {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 15px;
+  line-height: 1.4;
+}

@@ -1,0 +1,36 @@
+<ui-auth-layout [vector]="vector" [vectorLogin]="true" [decoWords]="decoWords">
+  <div class="card">
+    <h1 class="title">Welcome back!</h1>
+
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+
+      <ui-text-input
+        label="Email"
+        id="loginEmail"
+        type="email"
+        autocomplete="email"
+        formControlName="email"
+      />
+
+      <ui-password-input
+        label="Password"
+        id="loginPassword"
+        autocomplete="current-password"
+        formControlName="password"
+      />
+
+      <a class="forgot-link" href="#">Forgot password?</a>
+
+      <p *ngIf="serverError()" class="server-error">{{ serverError() }}</p>
+
+      <ui-primary-button type="submit" [disabled]="loading()">Log in</ui-primary-button>
+
+      <div class="separator"></div>
+
+      <ui-secondary-button type="button" (click)="goToRegister()">
+        Don't have an account? Sign up
+      </ui-secondary-button>
+
+    </form>
+  </div>
+</ui-auth-layout>
