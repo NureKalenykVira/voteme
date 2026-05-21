@@ -5,6 +5,7 @@ from datetime import datetime, timedelta, timezone
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.enums import Role
 from app.core.security import (
     create_access_token,
     hash_password,
@@ -200,3 +201,31 @@ class AuthService:
         )
         await self._audit.create_entry(session, "USER_PASSWORD_RESET", actor_id=user.id)
         await session.commit()
+
+    async def become_organizer(
+        self, session: AsyncSession, user: User
+    ) -> tuple[str, User]:
+        if not user.is_confirmed:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Email confirmation required to become an organizer",
+            )
+        if user.role != Role.voter:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Role is already organizer or higher",
+            )
+
+        previous_role = user.role.value
+        await self._users.update(session, user, role=Role.organizer)
+        await self._audit.create_entry(
+            session,
+            "USER_BECAME_ORGANIZER",
+            actor_id=user.id,
+            data={"previous_role": previous_role},
+        )
+        await session.commit()
+        await session.refresh(user)
+
+        new_token = create_access_token(sub=str(user.id), role=user.role)
+        return new_token, user

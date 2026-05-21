@@ -3,6 +3,7 @@ from httpx import AsyncClient
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.models.audit_log import AuditLog
 from app.models.user import User
 
 
@@ -217,3 +218,176 @@ class TestMe:
         )
         assert response.status_code == 401
         assert response.json()["detail"] == "Invalid or expired token"
+
+
+async def _login_token(client, email, password="Password123"):
+    response = await client.post(
+        "/auth/login", json={"email": email, "password": password}
+    )
+    return response.json()["access_token"]
+
+
+class TestBecomeOrganizer:
+    async def test_become_organizer_success_returns_200_and_new_token(
+        self, client, db_session
+    ):
+        await _register(client, "ivan@example.com")
+        await _confirm_user(db_session, "ivan@example.com")
+        old_token = await _login_token(client, "ivan@example.com")
+
+        response = await client.post(
+            "/auth/become-organizer",
+            headers={"Authorization": f"Bearer {old_token}"},
+        )
+        assert response.status_code == 200
+        body = response.json()
+        assert body["token_type"] == "bearer"
+        assert isinstance(body["access_token"], str)
+        assert len(body["access_token"]) > 0
+        assert body["access_token"] != old_token
+        assert body["user"]["role"] == "organizer"
+        assert body["user"]["email"] == "ivan@example.com"
+
+    async def test_become_organizer_persists_role_in_db(
+        self, client, db_session
+    ):
+        await _register(client, "julia@example.com")
+        await _confirm_user(db_session, "julia@example.com")
+        token = await _login_token(client, "julia@example.com")
+
+        response = await client.post(
+            "/auth/become-organizer",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert response.status_code == 200
+
+        db_session.expire_all()
+        result = await db_session.execute(
+            select(User).where(User.email == "julia@example.com")
+        )
+        user = result.scalar_one()
+        assert user.role.value == "organizer"
+
+    async def test_become_organizer_new_token_has_organizer_role(
+        self, client, db_session
+    ):
+        from app.core.security import decode_access_token
+
+        await _register(client, "kate@example.com")
+        await _confirm_user(db_session, "kate@example.com")
+        old_token = await _login_token(client, "kate@example.com")
+        old_payload = decode_access_token(old_token)
+        assert old_payload["role"] == "voter"
+
+        response = await client.post(
+            "/auth/become-organizer",
+            headers={"Authorization": f"Bearer {old_token}"},
+        )
+        new_token = response.json()["access_token"]
+        new_payload = decode_access_token(new_token)
+        assert new_payload["role"] == "organizer"
+        assert new_payload["sub"] == old_payload["sub"]
+
+    async def test_become_organizer_writes_audit_entry(
+        self, client, db_session
+    ):
+        await _register(client, "leo@example.com")
+        await _confirm_user(db_session, "leo@example.com")
+        token = await _login_token(client, "leo@example.com")
+
+        response = await client.post(
+            "/auth/become-organizer",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert response.status_code == 200
+
+        db_session.expire_all()
+        result = await db_session.execute(
+            select(AuditLog).where(AuditLog.action == "USER_BECAME_ORGANIZER")
+        )
+        entries = result.scalars().all()
+        assert len(entries) == 1
+        entry = entries[0]
+        assert entry.data == {"previous_role": "voter"}
+        assert entry.actor_id is not None
+
+    async def test_become_organizer_already_organizer_returns_409(
+        self, client, db_session
+    ):
+        await _register(client, "mike@example.com")
+        await _confirm_user(db_session, "mike@example.com")
+        token = await _login_token(client, "mike@example.com")
+
+        first = await client.post(
+            "/auth/become-organizer",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert first.status_code == 200
+        new_token = first.json()["access_token"]
+
+        # Second call with same user (now organizer) must 409
+        second = await client.post(
+            "/auth/become-organizer",
+            headers={"Authorization": f"Bearer {new_token}"},
+        )
+        assert second.status_code == 409
+        assert second.json()["detail"] == "Role is already organizer or higher"
+
+    async def test_become_organizer_global_admin_returns_409(
+        self, client, db_session
+    ):
+        from app.core.enums import Role
+
+        await _register(client, "nina@example.com")
+        user = await _confirm_user(db_session, "nina@example.com")
+        user.role = Role.global_admin
+        await db_session.commit()
+        await db_session.refresh(user)
+        token = await _login_token(client, "nina@example.com")
+
+        response = await client.post(
+            "/auth/become-organizer",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert response.status_code == 409
+        assert response.json()["detail"] == "Role is already organizer or higher"
+
+    async def test_become_organizer_unconfirmed_returns_403(
+        self, client, db_session
+    ):
+        # Register but do not confirm; manually issue token via security.create_access_token
+        from app.core.enums import Role
+        from app.core.security import create_access_token
+
+        await _register(client, "oleg@example.com")
+        result = await db_session.execute(
+            select(User).where(User.email == "oleg@example.com")
+        )
+        user = result.scalar_one()
+        assert user.is_confirmed is False
+        token = create_access_token(sub=str(user.id), role=Role.voter)
+
+        response = await client.post(
+            "/auth/become-organizer",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert response.status_code == 403
+        assert (
+            response.json()["detail"]
+            == "Email confirmation required to become an organizer"
+        )
+
+    async def test_become_organizer_without_token_returns_401(
+        self, client
+    ):
+        response = await client.post("/auth/become-organizer")
+        assert response.status_code in (401, 403)
+
+    async def test_become_organizer_invalid_token_returns_401(
+        self, client
+    ):
+        response = await client.post(
+            "/auth/become-organizer",
+            headers={"Authorization": "Bearer not-a-jwt"},
+        )
+        assert response.status_code == 401
