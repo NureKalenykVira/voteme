@@ -1,0 +1,9 @@
+$bp-lg: 1200px;
+$bp-md: 900px;
+$bp-sm: 600px;
+
+@mixin respond-below($bp) {
+  @media (max-width: #{$bp - 1px}) {
+    @content;
+  }
+}

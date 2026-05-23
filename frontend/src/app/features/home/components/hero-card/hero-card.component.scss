@@ -1,0 +1,14 @@
+:host {
+  display: block;
+  border-radius: var(--vm-radius-card);
+  padding: var(--hero-card-pt, 32px) 32px 32px 32px;
+  overflow: hidden;
+
+  &[tone='purple'] {
+    background: var(--vm-purple);
+  }
+
+  &[tone='lime'] {
+    background: var(--vm-lime);
+  }
+}

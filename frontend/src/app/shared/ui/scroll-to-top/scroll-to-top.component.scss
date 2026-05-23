@@ -1,0 +1,33 @@
+.scroll-to-top {
+  position: fixed;
+  bottom: 32px;
+  right: 32px;
+  z-index: 999;
+
+  padding: 0;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(8px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+
+  &--visible {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+  }
+
+  &:hover {
+    opacity: 0.85;
+  }
+
+  &__icon {
+    width: 48px;
+    height: 48px;
+    display: block;
+    transform: rotate(-90deg);
+  }
+}

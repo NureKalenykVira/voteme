@@ -1,12 +1,4 @@
 /* Font: Instrument Sans will be added here when the @font-face or Google Fonts import is configured */
 
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-  font-family: 'Instrument Sans', system-ui, -apple-system, sans-serif;
-}
+@use 'styles/tokens';
+@use 'styles/reset';
