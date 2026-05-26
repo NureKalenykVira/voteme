@@ -1,5 +1,5 @@
 import uuid
-from typing import AsyncGenerator, Callable
+from typing import AsyncGenerator, Callable, Optional
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -12,6 +12,7 @@ from app.models.user import User
 
 
 _bearer_scheme = HTTPBearer(auto_error=True)
+_bearer_scheme_optional = HTTPBearer(auto_error=False)
 
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
@@ -56,6 +57,28 @@ async def get_current_user(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Account has been deleted",
         )
+    return user
+
+
+async def get_optional_user(
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(_bearer_scheme_optional),
+    session: AsyncSession = Depends(get_db),
+) -> Optional[User]:
+    if credentials is None:
+        return None
+    payload = decode_access_token(credentials.credentials)
+    if payload is None:
+        return None
+    subject = payload.get("sub")
+    if subject is None:
+        return None
+    try:
+        user_id = uuid.UUID(str(subject))
+    except (ValueError, TypeError):
+        return None
+    user = await session.get(User, user_id)
+    if user is None or user.is_deleted:
+        return None
     return user
 
 

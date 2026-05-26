@@ -38,3 +38,8 @@ export interface ResetPasswordRequest {
   token: string;
   new_password: string;
 }
+
+export interface BecomeOrganizerResponse {
+  access_token: string;
+  token_type: string;
+}
