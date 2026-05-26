@@ -9,6 +9,7 @@ from fastapi.staticfiles import StaticFiles
 from app.api.routers.audit import router as audit_router
 from app.api.routers.auth import router as auth_router
 from app.api.routers.elections import router as elections_router
+from app.api.routers.elections import voter_router as whitelist_router
 from app.api.routers.health import router as health_router
 from app.core.config import settings
 from app.scheduler import get_scheduler
@@ -59,3 +60,4 @@ app.include_router(health_router)
 app.include_router(auth_router, prefix="/auth")
 app.include_router(audit_router, prefix="/audit")
 app.include_router(elections_router, prefix="/elections")
+app.include_router(whitelist_router, prefix="/elections")

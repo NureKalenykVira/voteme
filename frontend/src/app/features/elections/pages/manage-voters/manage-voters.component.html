@@ -2,10 +2,12 @@
   <img src="/assets/vectors/manage_vector.svg" class="manage-page__bg" alt="" aria-hidden="true" />
 
   <div class="manage-page__card">
-    @if (electionTitle()) {
-      <span class="manage-page__election-badge">{{ electionTitle() }}</span>
-    }
-    <h1 class="manage-page__title">Voter List</h1>
+    <div class="manage-page__header">
+      @if (electionTitle()) {
+        <span class="manage-page__election-badge">{{ electionTitle() }}</span>
+      }
+      <h1 class="manage-page__title">Voter List</h1>
+    </div>
 
     <div class="manage-page__stats">
       <span class="manage-page__stat">Voters invited · {{ votersInvited() }}</span>
@@ -211,10 +213,86 @@
         </div>
         <p class="add-modal__drop-hint">Drop CSV file here or click to upload</p>
 
+        @if (csvImportError()) {
+          <p class="add-modal__csv-error">{{ csvImportError() }}</p>
+        }
+
+        @if (csvImportResult(); as result) {
+          <button type="button" class="add-modal__csv-reset-btn" (click)="resetImport()">
+            Import another
+          </button>
+          <div class="add-modal__csv-result">
+            <div class="add-modal__csv-stat add-modal__csv-stat--added">
+              <span class="add-modal__csv-stat-num">{{ result.added_count }}</span>
+              <span class="add-modal__csv-stat-label">Added</span>
+            </div>
+            <div class="add-modal__csv-stat add-modal__csv-stat--dup">
+              <span class="add-modal__csv-stat-num">{{ result.duplicate_count }}</span>
+              <span class="add-modal__csv-stat-label">Duplicates</span>
+            </div>
+            <div class="add-modal__csv-stat add-modal__csv-stat--invalid">
+              <span class="add-modal__csv-stat-num">{{ result.invalid_count }}</span>
+              <span class="add-modal__csv-stat-label">Invalid</span>
+            </div>
+          </div>
+          @if (result.invalid_rows.length > 0) {
+            <div class="add-modal__csv-invalid-list">
+              <p class="add-modal__csv-invalid-heading">Invalid rows:</p>
+              @for (row of result.invalid_rows; track row.row) {
+                <div class="add-modal__csv-invalid-row">
+                  <span class="add-modal__csv-invalid-rownum">Row {{ row.row }}</span>
+                  <span class="add-modal__csv-invalid-email">{{ row.email || '(empty)' }}</span>
+                  <span class="add-modal__csv-invalid-reason">{{ row.reason }}</span>
+                </div>
+              }
+            </div>
+          }
+        }
+
         <div class="add-modal__footer">
+          @if (csvFile() && !csvImportResult()) {
+            <button
+              type="button"
+              class="add-modal__upload-btn"
+              [disabled]="csvImportLoading()"
+              (click)="uploadCsv()"
+            >
+              {{ csvImportLoading() ? 'Uploading...' : 'Upload' }}
+              <span class="add-modal__done-icon" aria-hidden="true"></span>
+            </button>
+          }
           <button type="button" class="add-modal__done-btn" (click)="closeAddModal()">
             Done
             <span class="add-modal__done-icon" aria-hidden="true"></span>
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (voterToDelete(); as voter) {
+    <div class="confirm-modal-overlay" (click)="cancelRemoveVoter()">
+      <div class="confirm-modal" (click)="$event.stopPropagation()">
+        <h2 class="confirm-modal__title">Remove voter?</h2>
+        <p class="confirm-modal__text">
+          Are you sure you want to remove
+          <span class="confirm-modal__email">{{ voter.email }}</span>
+          from the voter list?
+        </p>
+        <div class="confirm-modal__footer">
+          <button
+            type="button"
+            class="confirm-modal__cancel-btn"
+            (click)="cancelRemoveVoter()"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            class="confirm-modal__remove-btn"
+            (click)="confirmRemoveVoter()"
+          >
+            Remove
           </button>
         </div>
       </div>

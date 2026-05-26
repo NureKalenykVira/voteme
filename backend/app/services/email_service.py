@@ -74,3 +74,70 @@ class EmailService:
         except Exception as exc:
             logger.error("Failed to send password reset email to %s: %s", to, exc)
             raise
+
+    async def send_voter_invitation_email(
+        self, to: str, election_title: str, join_link: str
+    ) -> None:
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = f"You've been invited to vote in: {election_title}"
+        msg["From"] = settings.smtp_from
+        msg["To"] = to
+
+        text_body = (
+            f"You've been invited to vote in: {election_title}\n"
+            f"Join the election here:\n{join_link}"
+        )
+        html_body = (
+            f"<p>You've been invited to vote in: <strong>{election_title}</strong></p>"
+            f'<p><a href="{join_link}">Join the election</a></p>'
+            f"<p>Or copy this URL: {join_link}</p>"
+        )
+        msg.attach(MIMEText(text_body, "plain"))
+        msg.attach(MIMEText(html_body, "html"))
+
+        try:
+            await aiosmtplib.send(
+                msg,
+                hostname=settings.smtp_host,
+                port=settings.smtp_port,
+                username=settings.smtp_username or None,
+                password=settings.smtp_password or None,
+                start_tls=settings.smtp_start_tls,
+                use_tls=settings.smtp_use_tls,
+            )
+            logger.info("Voter invitation email sent to %s", to)
+        except Exception as exc:
+            logger.error("Failed to send voter invitation email to %s: %s", to, exc)
+
+    async def send_voter_removed_email(
+        self, to: str, election_title: str
+    ) -> None:
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = f"You've been removed from the voter list for: {election_title}"
+        msg["From"] = settings.smtp_from
+        msg["To"] = to
+
+        text_body = (
+            f"You've been removed from the voter list for: {election_title}.\n"
+            f"If you believe this was a mistake, please contact the election organizer."
+        )
+        html_body = (
+            f"<p>You've been removed from the voter list for: <strong>{election_title}</strong>.</p>"
+            f"<p>If you believe this was a mistake, please contact the election organizer.</p>"
+        )
+        msg.attach(MIMEText(text_body, "plain"))
+        msg.attach(MIMEText(html_body, "html"))
+
+        try:
+            await aiosmtplib.send(
+                msg,
+                hostname=settings.smtp_host,
+                port=settings.smtp_port,
+                username=settings.smtp_username or None,
+                password=settings.smtp_password or None,
+                start_tls=settings.smtp_start_tls,
+                use_tls=settings.smtp_use_tls,
+            )
+            logger.info("Voter removal email sent to %s", to)
+        except Exception as exc:
+            logger.error("Failed to send voter removal email to %s: %s", to, exc)

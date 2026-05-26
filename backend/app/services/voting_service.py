@@ -1,8 +1,14 @@
+import asyncio
+import csv
+import io
 import logging
+import re
 import secrets
 import uuid
 from datetime import datetime, timezone
 from typing import Optional
+
+_EMAIL_RE = re.compile(r'^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$')
 
 from fastapi import HTTPException, status
 from sqlalchemy.exc import IntegrityError
@@ -25,6 +31,8 @@ from app.repositories.voting_repository import VotingRepository
 from app.schemas.voting import (
     BallotOptionCreateRequest,
     BallotOptionUpdateRequest,
+    CsvImportInvalidRow,
+    CsvImportResponse,
     VotingCreateRequest,
     VotingUpdateRequest,
 )
@@ -32,11 +40,30 @@ from app.services.voting_fsm import (
     EVENT_AUDIT_ACTION,
     apply_transition,
 )
+from app.services.email_service import EmailService
+from app.core.config import settings
 
 
 logger = logging.getLogger(__name__)
 
 _MIN_OPTIONS_TO_PUBLISH = 2
+
+_email_service = EmailService()
+
+
+def _fire_and_forget_email(coro) -> None:
+    async def _runner():
+        try:
+            await coro
+        except Exception as exc:
+            logger.error("Background voter email failed: %s", exc)
+
+    try:
+        asyncio.get_running_loop().create_task(_runner())
+    except RuntimeError:
+        logger.warning("No running event loop; voter email skipped")
+        coro.close()
+
 
 
 class VotingService:
@@ -572,6 +599,19 @@ class VotingService:
         )
         await session.commit()
         await session.refresh(voter)
+
+        if voting.invitation_code:
+            join_link = f"{settings.frontend_url}/join/{voting.invitation_code}"
+            _fire_and_forget_email(
+                _email_service.send_voter_invitation_email(
+                    normalized, voting.title, join_link
+                )
+            )
+        else:
+            logger.warning(
+                "Skipping voter invitation email; voting %s has no invitation_code",
+                voting.id,
+            )
         return voter
 
     async def remove_voter(
@@ -601,14 +641,123 @@ class VotingService:
                     detail="Cannot remove a voter who has already voted",
                 )
 
+        removed_email = voter.email
         await self._voter_lists.delete(session, voter)
         await self._audit.create_entry(
             session,
             "VOTER_REMOVED",
             actor_id=actor.id,
-            data={"voting_id": str(voting_id), "email": voter.email},
+            data={"voting_id": str(voting_id), "email": removed_email},
         )
         await session.commit()
+
+        _fire_and_forget_email(
+            _email_service.send_voter_removed_email(removed_email, voting.title)
+        )
+
+    async def import_voters_csv(
+        self,
+        session: AsyncSession,
+        actor: User,
+        voting_id: uuid.UUID,
+        content: bytes,
+    ) -> CsvImportResponse:
+        voting = await self._get_voting_or_404(session, voting_id)
+        self._ensure_owner_or_admin(voting, actor)
+        self._ensure_editable(voting)
+
+        try:
+            text = content.decode("utf-8-sig")
+        except UnicodeDecodeError:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Invalid file encoding — expected UTF-8",
+            )
+
+        reader = csv.DictReader(io.StringIO(text))
+        if reader.fieldnames is None or "email" not in [
+            (f or "").strip().lower() for f in reader.fieldnames
+        ]:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail='CSV must have an "email" header column',
+            )
+
+        rows = list(reader)
+        if len(rows) > 1000:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="CSV exceeds the 1000-row limit",
+            )
+
+        added_count = 0
+        duplicate_count = 0
+        invalid_rows: list[CsvImportInvalidRow] = []
+        seen: set[str] = set()
+        added_emails: list[str] = []
+
+        email_col = next(
+            f for f in (reader.fieldnames or []) if (f or "").strip().lower() == "email"
+        )
+
+        for i, row in enumerate(rows, start=2):
+            raw = (row.get(email_col) or "").strip().lower()
+
+            if not raw:
+                invalid_rows.append(CsvImportInvalidRow(row=i, email="", reason="Missing email"))
+                continue
+
+            if not _EMAIL_RE.match(raw):
+                invalid_rows.append(CsvImportInvalidRow(row=i, email=raw, reason="Invalid email format"))
+                continue
+
+            if raw in seen:
+                duplicate_count += 1
+                continue
+            seen.add(raw)
+
+            existing = await self._voter_lists.get_by_email(session, voting_id, raw)
+            if existing is not None:
+                duplicate_count += 1
+                continue
+
+            user = await self._users.get_by_email(session, raw)
+            await self._voter_lists.add(session, voting_id, raw, user.id if user else None)
+            added_count += 1
+            added_emails.append(raw)
+
+        if added_count:
+            await self._audit.create_entry(
+                session,
+                "VOTER_BULK_IMPORTED",
+                actor_id=actor.id,
+                data={"voting_id": str(voting_id), "added": added_count},
+            )
+
+        await session.commit()
+
+        if added_emails:
+            if voting.invitation_code:
+                join_link = f"{settings.frontend_url}/join/{voting.invitation_code}"
+                for em in added_emails:
+                    _fire_and_forget_email(
+                        _email_service.send_voter_invitation_email(
+                            em, voting.title, join_link
+                        )
+                    )
+            else:
+                logger.warning(
+                    "Skipping bulk voter invitation emails; voting %s has no invitation_code",
+                    voting.id,
+                )
+
+        return CsvImportResponse(
+            total_rows=len(rows),
+            added_count=added_count,
+            duplicate_count=duplicate_count,
+            invalid_count=len(invalid_rows),
+            invalid_rows=invalid_rows,
+        )
 
     async def apply_system_transition(
         self,

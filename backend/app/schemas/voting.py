@@ -126,3 +126,17 @@ class VoterListResponse(BaseModel):
 
 class AddVoterRequest(BaseModel):
     email: EmailStr
+
+
+class CsvImportInvalidRow(BaseModel):
+    row: int
+    email: str
+    reason: str
+
+
+class CsvImportResponse(BaseModel):
+    total_rows: int
+    added_count: int
+    duplicate_count: int
+    invalid_count: int
+    invalid_rows: list[CsvImportInvalidRow]
