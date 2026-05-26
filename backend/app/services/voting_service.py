@@ -5,19 +5,22 @@ from datetime import datetime, timezone
 from typing import Optional
 
 from fastapi import HTTPException, status
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.enums import (
     Role,
-    VotingAccessType,
     VotingEvent,
     VotingStatus,
 )
 from app.models.ballot_option import BallotOption
 from app.models.user import User
+from app.models.voter_list import VoterList
 from app.models.voting import Voting
 from app.repositories.audit_repository import AuditRepository
 from app.repositories.ballot_option_repository import BallotOptionRepository
+from app.repositories.user_repository import UserRepository
+from app.repositories.voter_list_repository import VoterListRepository
 from app.repositories.voting_repository import VotingRepository
 from app.schemas.voting import (
     BallotOptionCreateRequest,
@@ -40,6 +43,8 @@ class VotingService:
     def __init__(self) -> None:
         self._votings = VotingRepository()
         self._options = BallotOptionRepository()
+        self._users = UserRepository()
+        self._voter_lists = VoterListRepository()
         self._audit = AuditRepository()
 
     async def _get_voting_or_404(
@@ -68,6 +73,13 @@ class VotingService:
                 detail="Operation allowed only for draft elections",
             )
 
+    def _ensure_editable(self, voting: Voting) -> None:
+        if voting.status not in (VotingStatus.draft, VotingStatus.published):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Operation allowed only for draft or published elections",
+            )
+
     async def create_voting(
         self,
         session: AsyncSession,
@@ -89,6 +101,7 @@ class VotingService:
             start_date_time=data.start_date_time,
             end_date_time=data.end_date_time,
             created_by=actor.id,
+            invitation_code=secrets.token_urlsafe(16),
         )
         await self._audit.create_entry(
             session,
@@ -154,7 +167,7 @@ class VotingService:
     ) -> Voting:
         voting = await self._get_voting_or_404(session, voting_id)
         self._ensure_owner_or_admin(voting, actor)
-        self._ensure_draft(voting)
+        self._ensure_editable(voting)
 
         updates: dict[str, object] = {}
         if data.title is not None and data.title != voting.title:
@@ -252,8 +265,6 @@ class VotingService:
             )
 
         updates: dict[str, object] = {"status": target}
-        if voting.access_type == VotingAccessType.private and not voting.invitation_code:
-            updates["invitation_code"] = secrets.token_urlsafe(16)
 
         voting = await self._votings.update(session, voting, **updates)
 
@@ -321,7 +332,7 @@ class VotingService:
     ) -> BallotOption:
         voting = await self._get_voting_or_404(session, voting_id)
         self._ensure_owner_or_admin(voting, actor)
-        self._ensure_draft(voting)
+        self._ensure_editable(voting)
 
         order_index = await self._options.next_order_index(session, voting.id)
         option = await self._options.create(
@@ -341,7 +352,14 @@ class VotingService:
                 "title": option.title,
             },
         )
-        await session.commit()
+        try:
+            await session.commit()
+        except IntegrityError:
+            await session.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Ballot option with this order already exists",
+            )
         await session.refresh(option)
         return option
 
@@ -355,7 +373,7 @@ class VotingService:
     ) -> BallotOption:
         voting = await self._get_voting_or_404(session, voting_id)
         self._ensure_owner_or_admin(voting, actor)
-        self._ensure_draft(voting)
+        self._ensure_editable(voting)
         option = await self._get_option_in_voting(session, voting, option_id)
 
         updates: dict[str, object] = {}
@@ -391,7 +409,7 @@ class VotingService:
     ) -> None:
         voting = await self._get_voting_or_404(session, voting_id)
         self._ensure_owner_or_admin(voting, actor)
-        self._ensure_draft(voting)
+        self._ensure_editable(voting)
         option = await self._get_option_in_voting(session, voting, option_id)
 
         await self._audit.create_entry(
@@ -417,7 +435,7 @@ class VotingService:
     ) -> BallotOption:
         voting = await self._get_voting_or_404(session, voting_id)
         self._ensure_owner_or_admin(voting, actor)
-        self._ensure_draft(voting)
+        self._ensure_editable(voting)
         option = await self._get_option_in_voting(session, voting, option_id)
 
         option = await self._options.update(session, option, photo_url=photo_url)
@@ -434,6 +452,163 @@ class VotingService:
         await session.commit()
         await session.refresh(option)
         return option
+
+    async def get_join_view(
+        self,
+        session: AsyncSession,
+        code: str,
+        actor: Optional[User] = None,
+    ) -> tuple[Voting, int, Optional[str], list[BallotOption], bool, bool, int, float]:
+        voting = await self._votings.get_by_invitation_code(session, code)
+        if voting is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Election not found",
+            )
+        already_voted = await self._votings.count_participants(session, voting.id)
+
+        organizer = await self._users.get_by_id(session, voting.created_by)
+        created_by_name: Optional[str] = None
+        if organizer is not None:
+            created_by_name = organizer.full_name or organizer.email
+
+        options = list(await self._options.list_for_voting(session, voting.id))
+
+        is_organizer = actor is not None and voting.created_by == actor.id
+        user_has_voted = (
+            await self._votings.has_user_voted(session, voting.id, actor.id)
+            if actor is not None
+            else False
+        )
+
+        voters_invited_count = await self._voter_lists.count_for_voting(session, voting.id)
+        participation = (
+            already_voted / voters_invited_count * 100.0
+            if voters_invited_count > 0
+            else 0.0
+        )
+
+        return (
+            voting,
+            already_voted,
+            created_by_name,
+            options,
+            is_organizer,
+            user_has_voted,
+            voters_invited_count,
+            participation,
+        )
+
+    async def list_voters(
+        self,
+        session: AsyncSession,
+        actor: User,
+        voting_id: uuid.UUID,
+        page: int,
+        page_size: int,
+    ) -> tuple[list[dict], int, int, int, float]:
+        voting = await self._get_voting_or_404(session, voting_id)
+        self._ensure_owner_or_admin(voting, actor)
+
+        voter_records, total = await self._voter_lists.list_paginated(
+            session, voting_id, page, page_size
+        )
+        voters_invited = await self._voter_lists.count_for_voting(session, voting_id)
+        already_voted = await self._votings.count_participants(session, voting_id)
+        participation_pct = (
+            already_voted / voters_invited * 100.0 if voters_invited > 0 else 0.0
+        )
+
+        items: list[dict] = []
+        for vl in voter_records:
+            name: Optional[str] = None
+            voted = False
+            if vl.user_id:
+                user = await self._users.get_by_id(session, vl.user_id)
+                if user:
+                    name = user.full_name or user.email
+                    voted = await self._votings.has_user_voted(
+                        session, voting_id, vl.user_id
+                    )
+            items.append(
+                {
+                    "id": vl.id,
+                    "email": vl.email,
+                    "name": name,
+                    "status": "voted" if voted else "invited",
+                }
+            )
+        return items, total, voters_invited, already_voted, participation_pct
+
+    async def add_voter(
+        self,
+        session: AsyncSession,
+        actor: User,
+        voting_id: uuid.UUID,
+        email: str,
+    ) -> VoterList:
+        voting = await self._get_voting_or_404(session, voting_id)
+        self._ensure_owner_or_admin(voting, actor)
+        self._ensure_editable(voting)
+
+        normalized = email.lower().strip()
+
+        existing = await self._voter_lists.get_by_email(session, voting_id, normalized)
+        if existing is not None:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="This email is already on the voter list",
+            )
+
+        user = await self._users.get_by_email(session, normalized)
+        user_id = user.id if user else None
+
+        voter = await self._voter_lists.add(session, voting_id, normalized, user_id)
+        await self._audit.create_entry(
+            session,
+            "VOTER_ADDED",
+            actor_id=actor.id,
+            data={"voting_id": str(voting_id), "email": normalized},
+        )
+        await session.commit()
+        await session.refresh(voter)
+        return voter
+
+    async def remove_voter(
+        self,
+        session: AsyncSession,
+        actor: User,
+        voting_id: uuid.UUID,
+        voter_id: uuid.UUID,
+    ) -> None:
+        voting = await self._get_voting_or_404(session, voting_id)
+        self._ensure_owner_or_admin(voting, actor)
+        self._ensure_editable(voting)
+
+        voter = await self._voter_lists.get_by_id(session, voter_id)
+        if voter is None or voter.voting_id != voting_id:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Voter not found"
+            )
+
+        if voter.user_id:
+            voted = await self._votings.has_user_voted(
+                session, voting_id, voter.user_id
+            )
+            if voted:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="Cannot remove a voter who has already voted",
+                )
+
+        await self._voter_lists.delete(session, voter)
+        await self._audit.create_entry(
+            session,
+            "VOTER_REMOVED",
+            actor_id=actor.id,
+            data={"voting_id": str(voting_id), "email": voter.email},
+        )
+        await session.commit()
 
     async def apply_system_transition(
         self,

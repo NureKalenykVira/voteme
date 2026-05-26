@@ -5,6 +5,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.ballot_option import BallotOption
+from app.models.voting import Voting
 
 
 class BallotOptionRepository:
@@ -39,6 +40,9 @@ class BallotOptionRepository:
     async def next_order_index(
         self, session: AsyncSession, voting_id: uuid.UUID
     ) -> int:
+        await session.execute(
+            select(Voting.id).where(Voting.id == voting_id).with_for_update()
+        )
         result = await session.execute(
             select(func.max(BallotOption.order_index)).where(
                 BallotOption.voting_id == voting_id

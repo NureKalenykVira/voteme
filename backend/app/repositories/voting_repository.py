@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.enums import VotingStatus
 from app.models.ballot_option import BallotOption
 from app.models.voting import Voting
+from app.models.voting_participation import VotingParticipation
 
 
 class VotingRepository:
@@ -36,6 +37,38 @@ class VotingRepository:
         options = list(opts_result.scalars().all())
         return voting, options
 
+    async def get_by_invitation_code(
+        self, session: AsyncSession, code: str
+    ) -> Optional[Voting]:
+        result = await session.execute(
+            select(Voting).where(
+                Voting.invitation_code == code,
+                Voting.is_deleted == False,  # noqa: E712
+            )
+        )
+        return result.scalar_one_or_none()
+
+    async def count_participants(
+        self, session: AsyncSession, voting_id: uuid.UUID
+    ) -> int:
+        result = await session.execute(
+            select(func.count()).where(
+                VotingParticipation.voting_id == voting_id
+            )
+        )
+        return result.scalar_one() or 0
+
+    async def has_user_voted(
+        self, session: AsyncSession, voting_id: uuid.UUID, user_id: uuid.UUID
+    ) -> bool:
+        result = await session.execute(
+            select(func.count()).where(
+                VotingParticipation.voting_id == voting_id,
+                VotingParticipation.user_id == user_id,
+            )
+        )
+        return (result.scalar_one() or 0) > 0
+
     async def create(
         self,
         session: AsyncSession,
@@ -47,6 +80,7 @@ class VotingRepository:
         start_date_time: datetime,
         end_date_time: datetime,
         created_by: uuid.UUID,
+        invitation_code: Optional[str] = None,
     ) -> Voting:
         voting = Voting(
             title=title,
@@ -56,6 +90,7 @@ class VotingRepository:
             start_date_time=start_date_time,
             end_date_time=end_date_time,
             created_by=created_by,
+            invitation_code=invitation_code,
         )
         session.add(voting)
         await session.flush()

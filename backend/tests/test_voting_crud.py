@@ -66,6 +66,7 @@ class TestCreateElection:
         assert body["title"] == "Test Election"
         assert body["created_by"] == str(organizer.id)
         assert body["is_anonymous"] is False
+        assert body["invitation_code"] is not None
 
     async def test_create_invalid_dates_returns_422(
         self, client: AsyncClient, db_session: AsyncSession
@@ -237,7 +238,7 @@ class TestUpdateAndDelete:
         assert response.status_code == 200
         assert response.json()["is_anonymous"] is False
 
-    async def test_update_published_returns_409(
+    async def test_update_published_succeeds(
         self, client: AsyncClient, db_session: AsyncSession
     ):
         organizer = await _make_user(db_session, "upd3@example.com")
@@ -252,6 +253,31 @@ class TestUpdateAndDelete:
             f"/elections/{vid}",
             headers=_auth(organizer),
             json={"title": "Late"},
+        )
+        assert response.status_code == 200
+        assert response.json()["title"] == "Late"
+
+    async def test_update_active_returns_409(
+        self, client: AsyncClient, db_session: AsyncSession
+    ):
+        from app.core.enums import VotingStatus
+        from app.models.voting import Voting
+        from sqlalchemy import select
+
+        organizer = await _make_user(db_session, "upd_active1@example.com")
+        voting = await _create_voting(client, organizer)
+        vid = voting["id"]
+
+        # Force status to active directly in DB
+        result = await db_session.execute(select(Voting).where(Voting.id == uuid.UUID(vid)))
+        v = result.scalar_one()
+        v.status = VotingStatus.active
+        await db_session.commit()
+
+        response = await client.patch(
+            f"/elections/{vid}",
+            headers=_auth(organizer),
+            json={"title": "Too late"},
         )
         assert response.status_code == 409
 
@@ -314,7 +340,7 @@ class TestBallotOptions:
         assert a["order_index"] == 0
         assert b["order_index"] == 1
 
-    async def test_create_option_on_published_returns_409(
+    async def test_create_option_on_published_succeeds(
         self, client: AsyncClient, db_session: AsyncSession
     ):
         organizer = await _make_user(db_session, "opt2@example.com")
@@ -329,6 +355,30 @@ class TestBallotOptions:
             f"/elections/{vid}/options",
             headers=_auth(organizer),
             json={"title": "C"},
+        )
+        assert response.status_code == 201
+        assert response.json()["title"] == "C"
+
+    async def test_create_option_on_active_returns_409(
+        self, client: AsyncClient, db_session: AsyncSession
+    ):
+        from app.core.enums import VotingStatus
+        from app.models.voting import Voting
+        from sqlalchemy import select
+
+        organizer = await _make_user(db_session, "opt_active1@example.com")
+        voting = await _create_voting(client, organizer)
+        vid = voting["id"]
+
+        result = await db_session.execute(select(Voting).where(Voting.id == uuid.UUID(vid)))
+        v = result.scalar_one()
+        v.status = VotingStatus.active
+        await db_session.commit()
+
+        response = await client.post(
+            f"/elections/{vid}/options",
+            headers=_auth(organizer),
+            json={"title": "Too late"},
         )
         assert response.status_code == 409
 
@@ -361,6 +411,19 @@ class TestBallotOptions:
         )
         assert response.status_code == 200
         assert response.json()["title"] == "Aprime"
+
+    async def test_three_options_get_sequential_order(
+        self, client: AsyncClient, db_session: AsyncSession
+    ):
+        organizer = await _make_user(db_session, "opt5@example.com")
+        voting = await _create_voting(client, organizer)
+        vid = voting["id"]
+        a = await _add_option(client, organizer, vid, "A")
+        b = await _add_option(client, organizer, vid, "B")
+        c = await _add_option(client, organizer, vid, "C")
+        assert a["order_index"] == 0
+        assert b["order_index"] == 1
+        assert c["order_index"] == 2
 
 
 class TestListAndDetail:
@@ -406,3 +469,184 @@ class TestArchive:
             f"/elections/{vid}/archive", headers=_auth(organizer)
         )
         assert response.status_code == 409
+
+
+class TestJoinView:
+    async def test_join_returns_organizer_full_name(
+        self, client: AsyncClient, db_session: AsyncSession
+    ):
+        organizer = await _make_user(db_session, "joinorg1@example.com")
+        voting = await _create_voting(client, organizer)
+        code = voting["invitation_code"]
+        assert code is not None
+
+        response = await client.get(f"/elections/join/{code}")
+        assert response.status_code == 200
+        body = response.json()
+        assert body["created_by"] == str(organizer.id)
+        assert body["created_by_name"] == "Test User"
+
+    async def test_join_falls_back_to_email_when_no_full_name(
+        self, client: AsyncClient, db_session: AsyncSession
+    ):
+        email = "joinorg2@example.com"
+        organizer = User(
+            email=email.lower(),
+            hashed_password=hash_password("Password123"),
+            full_name=None,
+            role=Role.organizer,
+            is_confirmed=True,
+        )
+        db_session.add(organizer)
+        await db_session.commit()
+        await db_session.refresh(organizer)
+
+        voting = await _create_voting(client, organizer)
+        code = voting["invitation_code"]
+        assert code is not None
+
+        response = await client.get(f"/elections/join/{code}")
+        assert response.status_code == 200
+        body = response.json()
+        assert body["created_by_name"] == email.lower()
+
+    async def test_join_unknown_code_returns_404(
+        self, client: AsyncClient
+    ):
+        response = await client.get("/elections/join/nonexistent-code")
+        assert response.status_code == 404
+
+
+class TestVoterList:
+    async def test_add_voter_returns_201(
+        self, client: AsyncClient, db_session: AsyncSession
+    ):
+        organizer = await _make_user(db_session, "vl_org1@example.com")
+        voting = await _create_voting(client, organizer)
+        vid = voting["id"]
+        response = await client.post(
+            f"/elections/{vid}/voters",
+            headers=_auth(organizer),
+            json={"email": "vl_test_1@example.com"},
+        )
+        assert response.status_code == 201
+        body = response.json()
+        assert body["email"] == "vl_test_1@example.com"
+        assert body["status"] == "invited"
+
+    async def test_add_duplicate_voter_returns_409(
+        self, client: AsyncClient, db_session: AsyncSession
+    ):
+        organizer = await _make_user(db_session, "vl_org2@example.com")
+        voting = await _create_voting(client, organizer)
+        vid = voting["id"]
+        await client.post(
+            f"/elections/{vid}/voters",
+            headers=_auth(organizer),
+            json={"email": "vl_test_2@example.com"},
+        )
+        second = await client.post(
+            f"/elections/{vid}/voters",
+            headers=_auth(organizer),
+            json={"email": "vl_test_2@example.com"},
+        )
+        assert second.status_code == 409
+
+    async def test_add_voter_non_owner_returns_403(
+        self, client: AsyncClient, db_session: AsyncSession
+    ):
+        organizer_a = await _make_user(db_session, "vl_org3a@example.com")
+        organizer_b = await _make_user(db_session, "vl_org3b@example.com")
+        voting = await _create_voting(client, organizer_a)
+        vid = voting["id"]
+        response = await client.post(
+            f"/elections/{vid}/voters",
+            headers=_auth(organizer_b),
+            json={"email": "vl_test_3@example.com"},
+        )
+        assert response.status_code == 403
+
+    async def test_list_voters_returns_added(
+        self, client: AsyncClient, db_session: AsyncSession
+    ):
+        organizer = await _make_user(db_session, "vl_org4@example.com")
+        voting = await _create_voting(client, organizer)
+        vid = voting["id"]
+        await client.post(
+            f"/elections/{vid}/voters",
+            headers=_auth(organizer),
+            json={"email": "vl_test_4a@example.com"},
+        )
+        await client.post(
+            f"/elections/{vid}/voters",
+            headers=_auth(organizer),
+            json={"email": "vl_test_4b@example.com"},
+        )
+        response = await client.get(
+            f"/elections/{vid}/voters",
+            headers=_auth(organizer),
+        )
+        assert response.status_code == 200
+        body = response.json()
+        assert body["total"] == 2
+        emails = {item["email"] for item in body["items"]}
+        assert "vl_test_4a@example.com" in emails
+        assert "vl_test_4b@example.com" in emails
+
+    async def test_remove_voter_returns_204(
+        self, client: AsyncClient, db_session: AsyncSession
+    ):
+        organizer = await _make_user(db_session, "vl_org5@example.com")
+        voting = await _create_voting(client, organizer)
+        vid = voting["id"]
+        add_resp = await client.post(
+            f"/elections/{vid}/voters",
+            headers=_auth(organizer),
+            json={"email": "vl_test_5@example.com"},
+        )
+        voter_id = add_resp.json()["id"]
+        del_resp = await client.delete(
+            f"/elections/{vid}/voters/{voter_id}",
+            headers=_auth(organizer),
+        )
+        assert del_resp.status_code == 204
+        list_resp = await client.get(
+            f"/elections/{vid}/voters",
+            headers=_auth(organizer),
+        )
+        assert list_resp.json()["total"] == 0
+
+    async def test_remove_nonexistent_voter_returns_404(
+        self, client: AsyncClient, db_session: AsyncSession
+    ):
+        organizer = await _make_user(db_session, "vl_org6@example.com")
+        voting = await _create_voting(client, organizer)
+        vid = voting["id"]
+        random_id = str(uuid.uuid4())
+        response = await client.delete(
+            f"/elections/{vid}/voters/{random_id}",
+            headers=_auth(organizer),
+        )
+        assert response.status_code == 404
+
+    async def test_list_voters_pagination(
+        self, client: AsyncClient, db_session: AsyncSession
+    ):
+        organizer = await _make_user(db_session, "vl_org7@example.com")
+        voting = await _create_voting(client, organizer)
+        vid = voting["id"]
+        for n in ("vl_test_7a@example.com", "vl_test_7b@example.com", "vl_test_7c@example.com"):
+            await client.post(
+                f"/elections/{vid}/voters",
+                headers=_auth(organizer),
+                json={"email": n},
+            )
+        response = await client.get(
+            f"/elections/{vid}/voters?page=1&page_size=2",
+            headers=_auth(organizer),
+        )
+        assert response.status_code == 200
+        body = response.json()
+        assert len(body["items"]) == 2
+        assert body["total"] == 3
+

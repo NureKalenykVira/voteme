@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 from app.core.enums import VotingAccessType, VotingStatus
 
@@ -83,3 +83,46 @@ class VotingListResponse(BaseModel):
     total: int
     page: int
     page_size: int
+
+
+class VotingJoinResponse(BaseModel):
+    id: uuid.UUID
+    title: str
+    description: Optional[str] = None
+    status: VotingStatus
+    is_anonymous: bool
+    start_date_time: datetime
+    end_date_time: datetime
+    created_by: uuid.UUID
+    created_by_name: Optional[str] = None
+    voters_invited: int
+    already_voted: int
+    participation_pct: float
+    options: list[BallotOptionResponse] = Field(default_factory=list)
+    is_organizer: bool = False
+    user_has_voted: bool = False
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class VoterResponse(BaseModel):
+    id: uuid.UUID
+    email: str
+    name: Optional[str] = None
+    status: str  # "invited" | "voted"
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class VoterListResponse(BaseModel):
+    items: list[VoterResponse]
+    total: int
+    page: int
+    page_size: int
+    voters_invited: int
+    already_voted: int
+    participation_pct: float
+
+
+class AddVoterRequest(BaseModel):
+    email: EmailStr

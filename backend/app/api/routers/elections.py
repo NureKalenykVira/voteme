@@ -5,15 +5,19 @@ import aiofiles
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import get_current_user, get_db, require_role
+from app.api.deps import get_current_user, get_db, get_optional_user, require_role
 from app.core.enums import Role, VotingStatus
 from app.models.user import User
 from app.schemas.voting import (
+    AddVoterRequest,
     BallotOptionCreateRequest,
     BallotOptionResponse,
     BallotOptionUpdateRequest,
+    VoterListResponse,
+    VoterResponse,
     VotingCreateRequest,
     VotingDetailResponse,
+    VotingJoinResponse,
     VotingListResponse,
     VotingResponse,
     VotingUpdateRequest,
@@ -83,6 +87,47 @@ async def list_elections(
 
 
 @router.get(
+    "/join/{code}",
+    response_model=VotingJoinResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Get election by invitation code",
+    responses={404: {"description": "Election not found"}},
+)
+async def get_election_by_code(
+    code: str,
+    session: AsyncSession = Depends(get_db),
+    actor: User | None = Depends(get_optional_user),
+) -> VotingJoinResponse:
+    (
+        voting,
+        already_voted,
+        created_by_name,
+        options,
+        is_organizer,
+        user_has_voted,
+        voters_invited_count,
+        participation,
+    ) = await _voting_service.get_join_view(session, code, actor)
+    return VotingJoinResponse(
+        id=voting.id,
+        title=voting.title,
+        description=voting.description,
+        status=voting.status,
+        is_anonymous=voting.is_anonymous,
+        start_date_time=voting.start_date_time,
+        end_date_time=voting.end_date_time,
+        created_by=voting.created_by,
+        created_by_name=created_by_name,
+        voters_invited=voters_invited_count,
+        already_voted=already_voted,
+        participation_pct=participation,
+        options=options,
+        is_organizer=is_organizer,
+        user_has_voted=user_has_voted,
+    )
+
+
+@router.get(
     "/{election_id}",
     response_model=VotingDetailResponse,
     status_code=status.HTTP_200_OK,
@@ -128,7 +173,7 @@ async def get_election(
         401: {"description": "Missing or invalid token"},
         403: {"description": "Caller does not own this election"},
         404: {"description": "Election not found"},
-        409: {"description": "Operation allowed only for draft elections"},
+        409: {"description": "Operation allowed only for draft or published elections"},
         422: {"description": "Validation error"},
     },
 )
@@ -219,7 +264,7 @@ async def archive_election(
         401: {"description": "Missing or invalid token"},
         403: {"description": "Caller does not own this election"},
         404: {"description": "Election not found"},
-        409: {"description": "Operation allowed only for draft elections"},
+        409: {"description": "Operation allowed only for draft or published elections"},
         422: {"description": "Validation error"},
     },
 )
@@ -244,7 +289,7 @@ async def create_ballot_option(
         401: {"description": "Missing or invalid token"},
         403: {"description": "Caller does not own this election"},
         404: {"description": "Ballot option not found"},
-        409: {"description": "Operation allowed only for draft elections"},
+        409: {"description": "Operation allowed only for draft or published elections"},
         422: {"description": "Validation error"},
     },
 )
@@ -269,7 +314,7 @@ async def update_ballot_option(
         401: {"description": "Missing or invalid token"},
         403: {"description": "Caller does not own this election"},
         404: {"description": "Ballot option not found"},
-        409: {"description": "Operation allowed only for draft elections"},
+        409: {"description": "Operation allowed only for draft or published elections"},
     },
 )
 async def delete_ballot_option(
@@ -293,7 +338,7 @@ async def delete_ballot_option(
         401: {"description": "Missing or invalid token"},
         403: {"description": "Caller does not own this election"},
         404: {"description": "Ballot option not found"},
-        409: {"description": "Operation allowed only for draft elections"},
+        409: {"description": "Operation allowed only for draft or published elections"},
     },
 )
 async def upload_ballot_option_photo(
@@ -328,3 +373,84 @@ async def upload_ballot_option_photo(
         session, current_user, election_id, option_id, photo_url
     )
     return BallotOptionResponse.model_validate(option)
+
+
+@router.get(
+    "/{election_id}/voters",
+    response_model=VoterListResponse,
+    status_code=status.HTTP_200_OK,
+    summary="List voters for an election",
+    responses={
+        401: {"description": "Missing or invalid token"},
+        403: {"description": "Caller does not own this election"},
+        404: {"description": "Election not found"},
+    },
+)
+async def list_voters(
+    election_id: uuid.UUID,
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=20, ge=1, le=100),
+    session: AsyncSession = Depends(get_db),
+    current_user: User = Depends(_organizer_or_admin()),
+) -> VoterListResponse:
+    items, total, voters_invited, already_voted, participation_pct = (
+        await _voting_service.list_voters(
+            session, current_user, election_id, page, page_size
+        )
+    )
+    return VoterListResponse(
+        items=[VoterResponse(**item) for item in items],
+        total=total,
+        page=page,
+        page_size=page_size,
+        voters_invited=voters_invited,
+        already_voted=already_voted,
+        participation_pct=participation_pct,
+    )
+
+
+@router.post(
+    "/{election_id}/voters",
+    response_model=VoterResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Add a voter to an election by email",
+    responses={
+        401: {"description": "Missing or invalid token"},
+        403: {"description": "Caller does not own this election"},
+        404: {"description": "Election not found"},
+        409: {"description": "Email already on voter list or election not editable"},
+        422: {"description": "Validation error"},
+    },
+)
+async def add_voter(
+    election_id: uuid.UUID,
+    payload: AddVoterRequest,
+    session: AsyncSession = Depends(get_db),
+    current_user: User = Depends(_organizer_or_admin()),
+) -> VoterResponse:
+    voter = await _voting_service.add_voter(
+        session, current_user, election_id, str(payload.email)
+    )
+    return VoterResponse(id=voter.id, email=voter.email, name=None, status="invited")
+
+
+@router.delete(
+    "/{election_id}/voters/{voter_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Remove a voter from an election",
+    responses={
+        401: {"description": "Missing or invalid token"},
+        403: {"description": "Caller does not own this election"},
+        404: {"description": "Election not found or voter not found"},
+        409: {"description": "Voter has already voted or election not editable"},
+    },
+)
+async def remove_voter(
+    election_id: uuid.UUID,
+    voter_id: uuid.UUID,
+    session: AsyncSession = Depends(get_db),
+    current_user: User = Depends(_organizer_or_admin()),
+) -> None:
+    await _voting_service.remove_voter(
+        session, current_user, election_id, voter_id
+    )
