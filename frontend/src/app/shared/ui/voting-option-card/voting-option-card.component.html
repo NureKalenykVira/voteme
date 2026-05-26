@@ -1,0 +1,81 @@
+<div class="option-card" [formGroup]="formGroup">
+  <div class="option-card__header">
+    <span class="option-card__badge">OPTION {{ index + 1 }}</span>
+    <button
+      *ngIf="canRemove"
+      type="button"
+      class="option-card__delete"
+      (click)="remove.emit()"
+      aria-label="Remove option"
+    >
+      <img src="/assets/icons/cancel.svg" alt="" aria-hidden="true" />
+    </button>
+  </div>
+
+  <div class="option-card__field">
+    <label class="option-card__label" [for]="'opt-title-' + index"
+      >Title <span class="option-card__required">*</span></label
+    >
+    <input
+      [id]="'opt-title-' + index"
+      class="option-card__input"
+      [class.option-card__input--error]="
+        formGroup.get('title')?.invalid && formGroup.get('title')?.touched
+      "
+      type="text"
+      formControlName="title"
+      placeholder="Option title"
+    />
+    <span
+      *ngIf="formGroup.get('title')?.invalid && formGroup.get('title')?.touched"
+      class="option-card__error"
+      >Title is required</span
+    >
+  </div>
+
+  <div class="option-card__field">
+    <label class="option-card__label" [for]="'opt-desc-' + index">Description</label>
+    <textarea
+      [id]="'opt-desc-' + index"
+      class="option-card__textarea"
+      formControlName="description"
+      placeholder="Optional description"
+      rows="3"
+    ></textarea>
+  </div>
+
+  <div class="option-card__field">
+    <label class="option-card__label">Upload photo</label>
+
+    <div
+      *ngIf="!photoPreview && !existingPhotoUrl"
+      class="option-card__upload"
+      (click)="fileInput.click()"
+    >
+      <img
+        src="/assets/icons/upload.svg"
+        class="option-card__upload-icon"
+        alt=""
+        aria-hidden="true"
+      />
+    </div>
+
+    <div *ngIf="photoPreview || existingPhotoUrl" class="option-card__preview">
+      <img
+        [src]="photoPreview || existingPhotoUrl"
+        class="option-card__preview-img"
+        alt="Option photo"
+      />
+      <button
+        type="button"
+        class="option-card__preview-remove"
+        (click)="clearPhoto()"
+        aria-label="Remove photo"
+      >
+        <img src="/assets/icons/cancel.svg" alt="" aria-hidden="true" />
+      </button>
+    </div>
+
+    <input #fileInput type="file" accept="image/*" hidden (change)="onFileSelected($event)" />
+  </div>
+</div>

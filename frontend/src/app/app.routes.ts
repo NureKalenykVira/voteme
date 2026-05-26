@@ -20,4 +20,29 @@ export const routes: Routes = [
     canActivate: [authGuard],
     loadChildren: () => import('./features/profile/profile.routes').then((m) => m.PROFILE_ROUTES),
   },
+  {
+    path: 'elections',
+    canActivate: [authGuard],
+    loadChildren: () =>
+      import('./features/elections/elections.routes').then((m) => m.ELECTIONS_ROUTES),
+  },
+  {
+    path: 'vote/:id',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/vote/vote.component').then((m) => m.VoteComponent),
+  },
+  {
+    path: 'join/:code',
+    loadComponent: () =>
+      import('./features/voting-detail/voting-detail.component').then(
+        (m) => m.VotingDetailComponent,
+      ),
+  },
+  {
+    path: 'my-votings',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/my-votings/my-votings.component').then((m) => m.MyVotingsComponent),
+  },
 ];

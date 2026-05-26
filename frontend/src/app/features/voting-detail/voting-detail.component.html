@@ -1,0 +1,137 @@
+<ui-public-header />
+
+<div class="detail-page">
+  <div *ngIf="notFound()" class="detail-page__not-found">
+    <p>Election not found.</p>
+  </div>
+
+  <ng-container *ngIf="election() as e">
+    <!-- Hero -->
+    <div class="detail-page__hero">
+      <img class="detail-page__hero-icon" src="assets/main/logo.svg" alt="" />
+      <h1 class="detail-page__hero-title">{{ e.title }}</h1>
+      <span class="detail-page__status-badge">{{ e.status | uppercase }}</span>
+    </div>
+
+    <!-- Content grid -->
+    <div class="detail-page__grid">
+      <!-- Left card -->
+      <div class="detail-page__left-card">
+        <div class="detail-page__info-row">
+          <span class="detail-page__info-label">Created by</span>
+          <span class="detail-page__info-value">{{
+            e.created_by_name || 'Unknown organizer'
+          }}</span>
+        </div>
+        <div class="detail-page__info-row">
+          <span class="detail-page__info-label">Started</span>
+          <span class="detail-page__info-value">{{ formatDate(e.start_date_time) }}</span>
+        </div>
+        <div class="detail-page__info-row">
+          <span class="detail-page__info-label">Voters invited</span>
+          <span class="detail-page__info-value">{{ e.voters_invited }}</span>
+        </div>
+        <div class="detail-page__info-row">
+          <span class="detail-page__info-label">Already voted</span>
+          <span class="detail-page__info-value">{{ e.already_voted }}</span>
+        </div>
+        <div class="detail-page__info-row">
+          <span class="detail-page__info-label">Participation</span>
+          <span class="detail-page__info-value">{{ e.participation_pct | number: '1.0-0' }}%</span>
+        </div>
+      </div>
+
+      <!-- Right card -->
+      <div class="detail-page__right-card">
+        <span class="detail-page__time-badge">Time remaining</span>
+        <div class="detail-page__countdown">
+          <div class="detail-page__time-unit">
+            <span class="detail-page__time-value">{{ hours() }}</span>
+            <span class="detail-page__time-label">Hours</span>
+          </div>
+          <div class="detail-page__time-unit">
+            <span class="detail-page__time-value">{{ minutes() }}</span>
+            <span class="detail-page__time-label">Minutes</span>
+          </div>
+          <div class="detail-page__time-unit">
+            <span class="detail-page__time-value">{{ seconds() }}</span>
+            <span class="detail-page__time-label">Seconds</span>
+          </div>
+        </div>
+        <div
+          *ngIf="e.description"
+          class="detail-page__desc-wrap"
+          [class.detail-page__desc-wrap--collapsed]="!descExpanded()"
+        >
+          <p class="detail-page__description">{{ e.description }}</p>
+          <button
+            type="button"
+            class="detail-page__desc-toggle"
+            [class.detail-page__desc-toggle--inline]="!descExpanded()"
+            (click)="toggleDesc()"
+          >{{ descExpanded() ? 'Show less' : 'Show more' }}</button>
+        </div>
+        <ng-container [ngSwitch]="buttonState">
+          <span *ngSwitchCase="'already_voted'" class="detail-page__voted-msg">
+            You have already voted
+          </span>
+          <button *ngSwitchCase="'cast_vote_disabled'" type="button" class="detail-page__vote-btn" disabled>
+            Cast my vote
+          </button>
+          <button *ngSwitchDefault type="button" class="detail-page__vote-btn" (click)="onPrimaryAction()">
+            {{ buttonState === 'go_to_results' ? 'Go to results' : buttonState === 'edit' ? 'Edit voting' : 'Cast my vote' }}
+          </button>
+        </ng-container>
+      </div>
+    </div>
+  </ng-container>
+</div>
+
+<!-- Options — full width -->
+<section *ngIf="election() && options().length" class="options-section">
+  <div class="options-section__inner">
+    <span class="options-section__title">Options</span>
+
+    <div class="options-section__list">
+      <div
+        *ngFor="let option of options(); let i = index"
+        class="option-card"
+        [ngClass]="cardClass(i)"
+      >
+        <div class="option-card__body">
+          <span class="option-card__badge">OPTION {{ i + 1 }}</span>
+          <h3 class="option-card__name">{{ option.title }}</h3>
+          <p *ngIf="option.description" class="option-card__desc">{{ option.description }}</p>
+        </div>
+        <div class="option-card__photo-wrap">
+          <img
+            *ngIf="photoUrl(option.photo_url) as src"
+            class="option-card__photo"
+            [src]="src"
+            [alt]="option.title"
+          />
+        </div>
+      </div>
+    </div>
+
+    <div class="options-section__actions">
+      <span *ngIf="buttonState === 'already_voted'" class="options-section__voted-msg">
+        You have already voted
+      </span>
+      <div *ngIf="buttonState !== 'already_voted'" class="cast-btn-wrap">
+        <ui-button
+          variant="primary"
+          size="md"
+          [disabled]="buttonState === 'cast_vote_disabled'"
+          (click)="buttonState !== 'cast_vote_disabled' && onPrimaryAction()"
+        >
+          {{ buttonState === 'go_to_results' ? 'Go to results' : buttonState === 'edit' ? 'Edit voting' : 'Cast my vote' }}
+          <img *ngIf="buttonState !== 'cast_vote_disabled'" src="/assets/auth/arrow_right.svg" class="cast-btn-arrow" alt="" />
+        </ui-button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="section-divider" />
+<ui-public-footer />

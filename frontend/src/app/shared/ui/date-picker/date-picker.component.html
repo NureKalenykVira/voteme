@@ -1,0 +1,88 @@
+<div class="dp" [class.dp--open]="open()">
+  <label *ngIf="label" class="dp__label" [for]="id">{{ label }}</label>
+
+  <div
+    class="dp__trigger"
+    [class.dp__trigger--disabled]="disabled"
+    [class.dp__trigger--error]="inputError || hasError"
+    (click)="toggleOpen($event)"
+    [attr.aria-expanded]="open()"
+    [attr.aria-haspopup]="'dialog'"
+  >
+    <input
+      class="dp__trigger-input"
+      [id]="id"
+      type="text"
+      [placeholder]="'dd.mm.yyyy'"
+      [disabled]="disabled"
+      [value]="inputFocused ? inputValue : displayValue || ''"
+      (focus)="onInputFocus()"
+      (blur)="onInputBlur()"
+      (input)="onInputChange($any($event.target).value)"
+      (keydown.enter)="onInputEnter()"
+      (click)="$event.stopPropagation()"
+      autocomplete="off"
+    />
+    <svg
+      class="dp__trigger-icon"
+      viewBox="0 0 20 20"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      (click)="toggleOpen($event)"
+    >
+      <rect x="3" y="4" width="14" height="13" rx="2" stroke="currentColor" stroke-width="1.5" />
+      <path d="M7 2v4M13 2v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+      <path d="M3 8h14" stroke="currentColor" stroke-width="1.5" />
+    </svg>
+  </div>
+
+  <div class="dp__overlay" *ngIf="open()" role="dialog" aria-modal="true">
+    <div class="dp__header">
+      <button type="button" class="dp__nav-btn" (click)="prevMonth()" aria-label="Previous month">
+        <svg viewBox="0 0 16 16" fill="none">
+          <polyline
+            points="10 4 6 8 10 12"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+      </button>
+      <span class="dp__month-label">{{ monthLabel }}</span>
+      <button type="button" class="dp__nav-btn" (click)="nextMonth()" aria-label="Next month">
+        <svg viewBox="0 0 16 16" fill="none">
+          <polyline
+            points="6 4 10 8 6 12"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+      </button>
+    </div>
+
+    <div class="dp__grid">
+      <span class="dp__weekday" *ngFor="let wd of weekDays">{{ wd }}</span>
+
+      <button
+        *ngFor="let day of calendarDays"
+        type="button"
+        class="dp__day"
+        [class.dp__day--empty]="day === null"
+        [class.dp__day--selected]="day !== null && isSelected(day)"
+        [class.dp__day--today]="day !== null && isToday(day)"
+        [class.dp__day--past]="day !== null && isPast(day)"
+        [disabled]="day === null"
+        (click)="selectDay(day)"
+      >
+        {{ day !== null ? day : '' }}
+      </button>
+    </div>
+
+    <div class="dp__footer">
+      <button type="button" class="dp__today-btn" (click)="setToday()">Today</button>
+    </div>
+  </div>
+</div>

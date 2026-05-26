@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import {
+  BecomeOrganizerResponse,
   ConfirmEmailResponse,
   LoginRequest,
   RegisterRequest,
@@ -55,5 +56,12 @@ export class AuthApiService {
       token,
       new_password: newPassword,
     });
+  }
+
+  becomeOrganizer(): Observable<BecomeOrganizerResponse> {
+    return this.http.post<BecomeOrganizerResponse>(
+      `${environment.apiUrl}/auth/become-organizer`,
+      {},
+    );
   }
 }

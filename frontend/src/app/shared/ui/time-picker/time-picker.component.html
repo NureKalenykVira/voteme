@@ -1,0 +1,128 @@
+<div class="tp" [class.tp--open]="open()">
+  <label *ngIf="label" class="tp__label" [for]="id">{{ label }}</label>
+
+  <div
+    class="tp__trigger"
+    [class.tp__trigger--disabled]="disabled"
+    [class.tp__trigger--error]="inputError || hasError"
+    (click)="toggleOpen($event)"
+    [attr.aria-expanded]="open()"
+    [attr.aria-haspopup]="'dialog'"
+  >
+    <input
+      class="tp__trigger-input"
+      [id]="id"
+      type="text"
+      placeholder="HH:mm"
+      [disabled]="disabled"
+      [value]="inputFocused ? inputValue : displayValue || ''"
+      (focus)="onInputFocus()"
+      (blur)="onInputBlur()"
+      (input)="onInputChange($any($event.target).value)"
+      (keydown.enter)="onInputEnter()"
+      (click)="$event.stopPropagation()"
+      autocomplete="off"
+    />
+    <svg
+      class="tp__trigger-icon"
+      viewBox="0 0 20 20"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      (click)="toggleOpen($event)"
+    >
+      <circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.5" />
+      <path
+        d="M10 6.5V10l2.5 2.5"
+        stroke="currentColor"
+        stroke-width="1.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+    </svg>
+  </div>
+
+  <div class="tp__overlay" *ngIf="open()" role="dialog" aria-modal="true">
+    <div class="tp__columns">
+      <!-- Hours -->
+      <div class="tp__column">
+        <button
+          type="button"
+          class="tp__spin-btn"
+          (click)="incrementHours()"
+          aria-label="Increase hours"
+        >
+          <svg viewBox="0 0 16 16" fill="none">
+            <polyline
+              points="4 10 8 6 12 10"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </button>
+        <span class="tp__value">{{ hoursDisplay }}</span>
+        <button
+          type="button"
+          class="tp__spin-btn"
+          (click)="decrementHours()"
+          aria-label="Decrease hours"
+        >
+          <svg viewBox="0 0 16 16" fill="none">
+            <polyline
+              points="4 6 8 10 12 6"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </button>
+      </div>
+
+      <span class="tp__colon">:</span>
+
+      <!-- Minutes -->
+      <div class="tp__column">
+        <button
+          type="button"
+          class="tp__spin-btn"
+          (click)="incrementMinutes()"
+          aria-label="Increase minutes"
+        >
+          <svg viewBox="0 0 16 16" fill="none">
+            <polyline
+              points="4 10 8 6 12 10"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </button>
+        <span class="tp__value">{{ minutesDisplay }}</span>
+        <button
+          type="button"
+          class="tp__spin-btn"
+          (click)="decrementMinutes()"
+          aria-label="Decrease minutes"
+        >
+          <svg viewBox="0 0 16 16" fill="none">
+            <polyline
+              points="4 6 8 10 12 6"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="tp__footer">
+      <button type="button" class="tp__now-btn" (click)="setNow()">Now</button>
+      <button type="button" class="tp__confirm" (click)="confirmTime()">OK</button>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,223 @@
+<div class="manage-page">
+  <img src="/assets/vectors/manage_vector.svg" class="manage-page__bg" alt="" aria-hidden="true" />
+
+  <div class="manage-page__card">
+    @if (electionTitle()) {
+      <span class="manage-page__election-badge">{{ electionTitle() }}</span>
+    }
+    <h1 class="manage-page__title">Voter List</h1>
+
+    <div class="manage-page__stats">
+      <span class="manage-page__stat">Voters invited · {{ votersInvited() }}</span>
+      <span class="manage-page__stat">Already voted · {{ alreadyVoted() }}</span>
+      <span class="manage-page__stat">Participation · {{ participationPct() }}%</span>
+
+      <button type="button" class="manage-page__add-btn" (click)="openAddModal()">
+        <span>Add voter</span>
+        <span class="manage-page__add-icon" aria-hidden="true">+</span>
+      </button>
+    </div>
+
+    <div class="manage-page__table-wrap">
+      <table class="manage-page__table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Status</th>
+            <th>Delete</th>
+          </tr>
+        </thead>
+        <tbody>
+          @if (loading()) {
+            <tr>
+              <td colspan="4" class="manage-page__state">Loading...</td>
+            </tr>
+          } @else if (error()) {
+            <tr>
+              <td colspan="4" class="manage-page__state manage-page__state--error">
+                {{ error() }}
+              </td>
+            </tr>
+          } @else if (voters().length === 0) {
+            <tr>
+              <td colspan="4" class="manage-page__state">No voters added yet</td>
+            </tr>
+          } @else {
+            @for (voter of voters(); track voter.id) {
+              <tr>
+                <td>{{ voter.name || '—' }}</td>
+                <td>{{ voter.email }}</td>
+                <td>{{ voter.status === 'voted' ? 'Voted' : 'Invited' }}</td>
+                <td>
+                  <button
+                    type="button"
+                    class="manage-page__delete-btn"
+                    [class.manage-page__delete-btn--disabled]="voter.status === 'voted'"
+                    [disabled]="voter.status === 'voted'"
+                    (click)="removeVoter(voter)"
+                    aria-label="Remove voter"
+                  >
+                    <svg viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <line
+                        x1="3"
+                        y1="3"
+                        x2="11"
+                        y2="11"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                      />
+                      <line
+                        x1="11"
+                        y1="3"
+                        x2="3"
+                        y2="11"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                      />
+                    </svg>
+                  </button>
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="manage-page__pagination">
+      <button
+        type="button"
+        class="manage-page__page-btn"
+        [disabled]="!hasPrev()"
+        (click)="prevPage()"
+      >
+        ← Previous
+      </button>
+      <button
+        type="button"
+        class="manage-page__page-btn"
+        [disabled]="!hasNext()"
+        (click)="nextPage()"
+      >
+        Next →
+      </button>
+    </div>
+
+    <div class="manage-page__footer">
+      <button type="button" class="manage-page__back-btn" (click)="backToVotings()">
+        Back to my votings
+        <span class="manage-page__back-icon" aria-hidden="true"></span>
+      </button>
+    </div>
+  </div>
+
+  @if (showAddModal()) {
+    <div class="add-modal-overlay" (click)="closeAddModal()">
+      <div class="add-modal" (click)="$event.stopPropagation()">
+        <h2 class="add-modal__title">Add voters</h2>
+
+        <span class="add-modal__badge">Share access</span>
+
+        <div class="add-modal__share">
+          <div class="add-modal__qr-box">
+            <qrcode
+              [qrdata]="inviteLink()"
+              [width]="96"
+              [margin]="1"
+              elementType="canvas"
+            ></qrcode>
+            <button type="button" class="add-modal__qr-download" (click)="downloadQr()">
+              Download
+            </button>
+          </div>
+
+          <div class="add-modal__copy-fields">
+            <div class="add-modal__field">
+              <span class="add-modal__label">Copy code</span>
+              <div class="add-modal__input-row">
+                <input
+                  class="add-modal__input"
+                  type="text"
+                  [value]="inviteCode()"
+                  readonly
+                />
+                <button
+                  type="button"
+                  class="add-modal__copy-btn"
+                  [class.add-modal__copy-btn--copied]="copiedCode()"
+                  (click)="copyCode()"
+                  aria-label="Copy code"
+                >
+                  <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="6" y="6" width="10" height="10" rx="2" stroke="currentColor" stroke-width="1.5"/>
+                    <path d="M4 12H3C2.44772 12 2 11.5523 2 11V3C2 2.44772 2.44772 2 3 2H11C11.5523 2 12 2.44772 12 3V4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <div class="add-modal__field">
+              <span class="add-modal__label">Copy link</span>
+              <div class="add-modal__input-row">
+                <input
+                  class="add-modal__input"
+                  type="text"
+                  [value]="inviteLink()"
+                  readonly
+                />
+                <button
+                  type="button"
+                  class="add-modal__copy-btn"
+                  [class.add-modal__copy-btn--copied]="copiedLink()"
+                  (click)="copyLink()"
+                  aria-label="Copy link"
+                >
+                  <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="6" y="6" width="10" height="10" rx="2" stroke="currentColor" stroke-width="1.5"/>
+                    <path d="M4 12H3C2.44772 12 2 11.5523 2 11V3C2 2.44772 2.44772 2 3 2H11C11.5523 2 12 2.44772 12 3V4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <p class="add-modal__or">or</p>
+
+        <span class="add-modal__badge">Upload voter list</span>
+
+        <div
+          class="add-modal__dropzone"
+          [class.add-modal__dropzone--dragover]="isDragOver()"
+          (click)="csvInput.click()"
+          (dragover)="onDragOver($event)"
+          (dragleave)="onDragLeave()"
+          (drop)="onDrop($event)"
+        >
+          <img class="add-modal__upload-icon" src="/assets/icons/upload.svg" width="32" height="32" alt="" />
+          @if (csvFile()) {
+            <span class="add-modal__csv-name">{{ csvFile()!.name }}</span>
+          }
+          <input
+            #csvInput
+            type="file"
+            accept=".csv"
+            style="display:none"
+            (change)="onFileSelected($event)"
+          />
+        </div>
+        <p class="add-modal__drop-hint">Drop CSV file here or click to upload</p>
+
+        <div class="add-modal__footer">
+          <button type="button" class="add-modal__done-btn" (click)="closeAddModal()">
+            Done
+            <span class="add-modal__done-icon" aria-hidden="true"></span>
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>
