@@ -13,6 +13,7 @@ from app.schemas.voting import (
     BallotOptionCreateRequest,
     BallotOptionResponse,
     BallotOptionUpdateRequest,
+    CsvImportResponse,
     VoterListResponse,
     VoterResponse,
     VotingCreateRequest,
@@ -25,6 +26,7 @@ from app.schemas.voting import (
 from app.services.voting_service import VotingService
 
 router = APIRouter(tags=["Elections"])
+voter_router = APIRouter(tags=["Whitelist"])
 
 _voting_service = VotingService()
 
@@ -375,7 +377,7 @@ async def upload_ballot_option_photo(
     return BallotOptionResponse.model_validate(option)
 
 
-@router.get(
+@voter_router.get(
     "/{election_id}/voters",
     response_model=VoterListResponse,
     status_code=status.HTTP_200_OK,
@@ -409,7 +411,7 @@ async def list_voters(
     )
 
 
-@router.post(
+@voter_router.post(
     "/{election_id}/voters",
     response_model=VoterResponse,
     status_code=status.HTTP_201_CREATED,
@@ -434,7 +436,41 @@ async def add_voter(
     return VoterResponse(id=voter.id, email=voter.email, name=None, status="invited")
 
 
-@router.delete(
+@voter_router.post(
+    "/{election_id}/voters/csv",
+    response_model=CsvImportResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Bulk-import voters from a CSV file",
+    description=(
+        "Upload a UTF-8 CSV file with an `email` header column. "
+        "Max 1000 data rows. Returns added / duplicate / invalid counts."
+    ),
+    responses={
+        401: {"description": "Missing or invalid token"},
+        403: {"description": "Caller does not own this election"},
+        404: {"description": "Election not found"},
+        409: {"description": "Election not editable"},
+        422: {"description": "Invalid file or encoding"},
+    },
+)
+async def import_voters_csv(
+    election_id: uuid.UUID,
+    file: UploadFile = File(...),
+    session: AsyncSession = Depends(get_db),
+    current_user: User = Depends(_organizer_or_admin()),
+) -> CsvImportResponse:
+    if file.content_type not in ("text/csv", "text/plain", "application/vnd.ms-excel", "application/octet-stream"):
+        content_type = file.content_type or ""
+        if not (content_type.startswith("text/") or file.filename and file.filename.endswith(".csv")):
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Only CSV files are accepted",
+            )
+    content = await file.read()
+    return await _voting_service.import_voters_csv(session, current_user, election_id, content)
+
+
+@voter_router.delete(
     "/{election_id}/voters/{voter_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Remove a voter from an election",

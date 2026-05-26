@@ -90,7 +90,7 @@
         <div class="activity-rows">
           <app-activity-stat-row label="Votings participated" [value]="0" />
           <div class="activity-links">
-            <app-activity-link-button label="View my votings" routerLink="/home" />
+            <app-activity-link-button label="View my votings" routerLink="/my-votings" />
             <app-activity-link-button
               *ngIf="user()?.role === 'organizer' || user()?.role === 'auditor'"
               label="View event log"

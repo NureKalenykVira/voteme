@@ -8,6 +8,7 @@ import {
   BallotOptionResponse,
   BallotOptionUpdateRequest,
   CreateElectionRequest,
+  CsvImportResult,
   ElectionListResponse,
   ElectionResponse,
   VoterListResponse,
@@ -75,6 +76,12 @@ export class ElectionsApiService {
 
   removeVoter(electionId: string, voterId: string): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${electionId}/voters/${voterId}`);
+  }
+
+  importVotersCsv(electionId: string, file: File): Observable<CsvImportResult> {
+    const formData = new FormData();
+    formData.append('file', file, file.name);
+    return this.http.post<CsvImportResult>(`${this.apiUrl}/${electionId}/voters/csv`, formData);
   }
 
   listMy(page = 1, pageSize = 20, status?: string): Observable<ElectionListResponse> {

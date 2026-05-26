@@ -9,7 +9,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ElectionsApiService } from '../../services/elections-api.service';
-import { VoterResponse } from '../../models/elections.models';
+import { CsvImportResult, VoterResponse } from '../../models/elections.models';
 import { QRCodeComponent } from 'angularx-qrcode';
 
 @Component({
@@ -33,7 +33,7 @@ export class ManageVotersComponent implements OnInit {
   readonly error = signal('');
 
   readonly page = signal(1);
-  readonly pageSize = 20;
+  readonly pageSize = 10;
   readonly total = signal(0);
 
   readonly votersInvited = signal(0);
@@ -51,6 +51,12 @@ export class ManageVotersComponent implements OnInit {
   readonly csvFile = signal<File | null>(null);
   readonly isDragOver = signal(false);
   readonly showAddModal = signal(false);
+
+  readonly csvImportLoading = signal(false);
+  readonly csvImportResult = signal<CsvImportResult | null>(null);
+  readonly csvImportError = signal('');
+
+  readonly voterToDelete = signal<VoterResponse | null>(null);
 
   ngOnInit(): void {
     if (!this.electionId) {
@@ -95,6 +101,34 @@ export class ManageVotersComponent implements OnInit {
 
   closeAddModal(): void {
     this.showAddModal.set(false);
+    this.csvFile.set(null);
+    this.csvImportResult.set(null);
+    this.csvImportError.set('');
+  }
+
+  resetImport(): void {
+    this.csvImportResult.set(null);
+    this.csvImportError.set('');
+  }
+
+  uploadCsv(): void {
+    const file = this.csvFile();
+    if (!file || this.csvImportLoading()) return;
+    this.csvImportLoading.set(true);
+    this.csvImportError.set('');
+    this.csvImportResult.set(null);
+    this.electionsApi.importVotersCsv(this.electionId, file).subscribe({
+      next: (result) => {
+        this.csvImportResult.set(result);
+        this.csvImportLoading.set(false);
+        this.csvFile.set(null);
+        this.loadVoters();
+      },
+      error: (err) => {
+        this.csvImportError.set(err?.error?.detail ?? 'Import failed');
+        this.csvImportLoading.set(false);
+      },
+    });
   }
 
   copyCode(): void {
@@ -143,9 +177,25 @@ export class ManageVotersComponent implements OnInit {
 
   removeVoter(voter: VoterResponse): void {
     if (voter.status === 'voted') return;
+    this.voterToDelete.set(voter);
+  }
+
+  cancelRemoveVoter(): void {
+    this.voterToDelete.set(null);
+  }
+
+  confirmRemoveVoter(): void {
+    const voter = this.voterToDelete();
+    if (!voter || voter.status === 'voted') return;
     this.electionsApi.removeVoter(this.electionId, voter.id).subscribe({
-      next: () => this.loadVoters(),
-      error: (err) => this.error.set(err?.error?.detail ?? 'Failed to remove voter'),
+      next: () => {
+        this.voterToDelete.set(null);
+        this.loadVoters();
+      },
+      error: (err) => {
+        this.voterToDelete.set(null);
+        this.error.set(err?.error?.detail ?? 'Failed to remove voter');
+      },
     });
   }
 

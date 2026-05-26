@@ -269,4 +269,175 @@
     -webkit-mask: url('/assets/auth/arrow_right.svg') center / 26px 26px no-repeat;
     mask: url('/assets/auth/arrow_right.svg') center / 26px 26px no-repeat;
   }
+
+  &__upload-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--vm-purple);
+    color: #ffffff;
+    border: none;
+    border-radius: var(--vm-radius-pill);
+    padding: 7px 22px;
+    font-size: 14px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    transition: opacity 0.15s;
+
+    &:hover:not(:disabled) {
+      opacity: 0.85;
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+
+  &__csv-reset-btn {
+    display: block;
+    margin: 0 auto 12px;
+    background: none;
+    border: none;
+    color: var(--vm-purple);
+    font-size: 13px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    padding: 0;
+    opacity: 0.85;
+
+    &:hover {
+      opacity: 1;
+    }
+  }
+
+  &__csv-error {
+    color: #b42525;
+    font-size: 13px;
+    font-weight: 600;
+    text-align: center;
+    margin: 0 0 14px;
+    background: rgba(180, 37, 37, 0.08);
+    border-radius: 10px;
+    padding: 8px 14px;
+  }
+
+  &__csv-result {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-bottom: 14px;
+  }
+
+  &__csv-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    border-radius: 14px;
+    padding: 10px 18px;
+    min-width: 80px;
+
+    &--added {
+      background: rgba(91, 232, 139, 0.2);
+    }
+
+    &--dup {
+      background: rgba(255, 200, 60, 0.2);
+    }
+
+    &--invalid {
+      background: rgba(180, 37, 37, 0.1);
+    }
+  }
+
+  &__csv-stat-num {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--vm-text-dark);
+    line-height: 1;
+  }
+
+  &__csv-stat-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--vm-text-dark);
+    opacity: 0.65;
+    margin-top: 4px;
+  }
+
+  &__csv-invalid-list {
+    background: rgba(91, 79, 232, 0.06);
+    border-radius: 14px;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    max-height: 160px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(91, 79, 232, 0.5) transparent;
+
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: rgba(91, 79, 232, 0.4);
+      border-radius: 8px;
+    }
+
+    &::-webkit-scrollbar-thumb:hover {
+      background: rgba(91, 79, 232, 0.65);
+    }
+  }
+
+  &__csv-invalid-heading {
+    color: var(--vm-purple);
+    font-size: 12px;
+    font-weight: 700;
+    margin: 0 0 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  &__csv-invalid-row {
+    display: flex;
+    gap: 10px;
+    align-items: baseline;
+    padding: 4px 0;
+    border-bottom: 1px solid rgba(91, 79, 232, 0.12);
+    font-size: 13px;
+
+    &:last-child {
+      border-bottom: none;
+    }
+  }
+
+  &__csv-invalid-rownum {
+    color: rgba(26, 26, 26, 0.45);
+    font-size: 12px;
+    flex: 0 0 44px;
+  }
+
+  &__csv-invalid-email {
+    color: var(--vm-text-dark);
+    font-weight: 600;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__csv-invalid-reason {
+    color: #b42525;
+    font-size: 12px;
+    flex: 0 0 auto;
+  }
 }

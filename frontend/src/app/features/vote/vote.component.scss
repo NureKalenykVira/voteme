@@ -1,0 +1,144 @@
+.vote-page {
+  max-width: 1480px;
+  margin: 16px auto 0;
+  padding: 0 20px 32px;
+
+  &__not-found {
+    text-align: center;
+    padding: 60px 20px;
+    font-size: 18px;
+    color: #ffffff;
+  }
+
+  &__label {
+    display: inline-block;
+    background: var(--vm-purple);
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 700;
+    padding: 7px 20px;
+    border-radius: var(--vm-radius-pill);
+    margin-bottom: 16px;
+  }
+
+  &__list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  &__actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 24px;
+  }
+
+  &__cast-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--vm-lime);
+    color: var(--vm-text-dark);
+    border: none;
+    border-radius: var(--vm-radius-pill);
+    padding: 14px 28px;
+    font-size: 16px;
+    font-weight: 800;
+    font-family: inherit;
+    cursor: pointer;
+    transition: opacity 0.15s;
+
+    &:hover {
+      opacity: 0.88;
+    }
+  }
+
+  &__cast-arrow {
+    font-size: 20px;
+    line-height: 1;
+  }
+}
+
+.option-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  border-radius: 16px;
+  padding: 20px 24px;
+
+  &__body {
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__badge {
+    display: inline-block;
+    background: var(--vm-purple);
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    padding: 5px 14px;
+    border-radius: var(--vm-radius-pill);
+    margin-bottom: 12px;
+  }
+
+  &__name {
+    font-size: 24px;
+    font-weight: 800;
+    margin: 0 0 6px;
+  }
+
+  &__desc {
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.5;
+    margin: 0;
+  }
+
+  &__photo {
+    width: 90px;
+    height: 90px;
+    flex: 0 0 auto;
+    border-radius: 16px;
+    object-fit: cover;
+  }
+
+  &--variant-0 {
+    background: #ffffff;
+
+    .option-card__name,
+    .option-card__desc {
+      color: var(--vm-text-dark);
+    }
+  }
+
+  &--variant-1 {
+    background: var(--vm-lime);
+
+    .option-card__name,
+    .option-card__desc {
+      color: var(--vm-text-dark);
+    }
+  }
+
+  &--variant-2 {
+    background: var(--vm-purple);
+
+    .option-card__name,
+    .option-card__desc {
+      color: #ffffff;
+    }
+  }
+
+  &--variant-3 {
+    background: #252529;
+    border: 2px solid var(--vm-lime);
+
+    .option-card__name,
+    .option-card__desc {
+      color: #ffffff;
+    }
+  }
+}

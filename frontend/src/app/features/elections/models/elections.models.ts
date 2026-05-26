@@ -102,3 +102,17 @@ export interface ElectionListResponse {
   page: number;
   page_size: number;
 }
+
+export interface CsvImportInvalidRow {
+  row: number;
+  email: string;
+  reason: string;
+}
+
+export interface CsvImportResult {
+  total_rows: number;
+  added_count: number;
+  duplicate_count: number;
+  invalid_count: number;
+  invalid_rows: CsvImportInvalidRow[];
+}

@@ -26,6 +26,15 @@ export class TextInputComponent implements ControlValueAccessor, DoCheck {
   @Input() crossFieldErrorKey?: string;
 
   _value = '';
+
+  get showAsterisk(): boolean {
+    return this.label.trimEnd().endsWith('*');
+  }
+
+  get labelText(): string {
+    return this.showAsterisk ? this.label.trimEnd().slice(0, -1) : this.label;
+  }
+
   private readonly cdr = inject(ChangeDetectorRef);
   readonly ngControl = inject(NgControl, { self: true, optional: true });
 
@@ -44,7 +53,7 @@ export class TextInputComponent implements ControlValueAccessor, DoCheck {
     if (!c) return;
     const touched = c.touched;
     const invalid = c.invalid;
-    const parentInvalid = !!(c.parent?.invalid);
+    const parentInvalid = !!c.parent?.invalid;
     if (
       touched !== this._lastTouched ||
       invalid !== this._lastInvalid ||
@@ -70,7 +79,8 @@ export class TextInputComponent implements ControlValueAccessor, DoCheck {
     if (e?.['required']) return 'This field is required';
     if (e?.['email']) return 'Enter a valid email';
     if (e?.['minlength']) return `Minimum ${e['minlength'].requiredLength} characters`;
-    if (this.crossFieldErrorKey && c.parent?.errors?.[this.crossFieldErrorKey]) return "Passwords don't match";
+    if (this.crossFieldErrorKey && c.parent?.errors?.[this.crossFieldErrorKey])
+      return "Passwords don't match";
     return '';
   }
 

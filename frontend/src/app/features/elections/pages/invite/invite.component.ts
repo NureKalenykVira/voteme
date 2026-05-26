@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { QRCodeComponent } from 'angularx-qrcode';
 import { ElectionsApiService } from '../../services/elections-api.service';
+import { CsvImportResult } from '../../models/elections.models';
 
 @Component({
   selector: 'app-invite',
@@ -24,6 +25,10 @@ export class InviteComponent implements OnInit {
   readonly copiedLink = signal(false);
   readonly csvFile = signal<File | null>(null);
   readonly isDragOver = signal(false);
+
+  readonly csvImportLoading = signal(false);
+  readonly csvImportResult = signal<CsvImportResult | null>(null);
+  readonly csvImportError = signal('');
 
   ngOnInit(): void {
     if (this.electionId) {
@@ -62,7 +67,11 @@ export class InviteComponent implements OnInit {
 
   onFileSelected(event: Event): void {
     const file = (event.target as HTMLInputElement).files?.[0];
-    if (file) this.csvFile.set(file);
+    if (file) {
+      this.csvFile.set(file);
+      this.csvImportResult.set(null);
+      this.csvImportError.set('');
+    }
   }
 
   onDragOver(event: DragEvent): void {
@@ -78,7 +87,35 @@ export class InviteComponent implements OnInit {
     event.preventDefault();
     this.isDragOver.set(false);
     const file = event.dataTransfer?.files?.[0];
-    if (file) this.csvFile.set(file);
+    if (file) {
+      this.csvFile.set(file);
+      this.csvImportResult.set(null);
+      this.csvImportError.set('');
+    }
+  }
+
+  resetImport(): void {
+    this.csvImportResult.set(null);
+    this.csvImportError.set('');
+  }
+
+  uploadCsv(): void {
+    const file = this.csvFile();
+    if (!file || !this.electionId || this.csvImportLoading()) return;
+    this.csvImportLoading.set(true);
+    this.csvImportError.set('');
+    this.csvImportResult.set(null);
+    this.electionsApi.importVotersCsv(this.electionId, file).subscribe({
+      next: (result) => {
+        this.csvImportResult.set(result);
+        this.csvImportLoading.set(false);
+        this.csvFile.set(null);
+      },
+      error: (err) => {
+        this.csvImportError.set(err?.error?.detail ?? 'Import failed');
+        this.csvImportLoading.set(false);
+      },
+    });
   }
 
   manageVoters(): void {

@@ -115,7 +115,53 @@
     </div>
     <p class="invite-page__drop-hint">Drop CSV file here or click to upload</p>
 
+    @if (csvImportError()) {
+      <p class="invite-page__csv-error">{{ csvImportError() }}</p>
+    }
+
+    @if (csvImportResult(); as result) {
+      <button type="button" class="invite-page__csv-reset-btn" (click)="resetImport()">
+        Import another
+      </button>
+      <div class="invite-page__csv-result">
+        <div class="invite-page__csv-stat invite-page__csv-stat--added">
+          <span class="invite-page__csv-stat-num">{{ result.added_count }}</span>
+          <span class="invite-page__csv-stat-label">Added</span>
+        </div>
+        <div class="invite-page__csv-stat invite-page__csv-stat--dup">
+          <span class="invite-page__csv-stat-num">{{ result.duplicate_count }}</span>
+          <span class="invite-page__csv-stat-label">Duplicates</span>
+        </div>
+        <div class="invite-page__csv-stat invite-page__csv-stat--invalid">
+          <span class="invite-page__csv-stat-num">{{ result.invalid_count }}</span>
+          <span class="invite-page__csv-stat-label">Invalid</span>
+        </div>
+      </div>
+      @if (result.invalid_rows.length > 0) {
+        <div class="invite-page__csv-invalid-list">
+          <p class="invite-page__csv-invalid-heading">Invalid rows:</p>
+          @for (row of result.invalid_rows; track row.row) {
+            <div class="invite-page__csv-invalid-row">
+              <span class="invite-page__csv-invalid-rownum">Row {{ row.row }}</span>
+              <span class="invite-page__csv-invalid-email">{{ row.email || '(empty)' }}</span>
+              <span class="invite-page__csv-invalid-reason">{{ row.reason }}</span>
+            </div>
+          }
+        </div>
+      }
+    }
+
     <div class="invite-page__footer">
+      @if (csvFile() && !csvImportResult()) {
+        <button
+          type="button"
+          class="invite-page__upload-btn"
+          [disabled]="csvImportLoading()"
+          (click)="uploadCsv()"
+        >
+          {{ csvImportLoading() ? 'Uploading...' : 'Upload' }}
+        </button>
+      }
       <button type="button" class="invite-page__manage-btn" (click)="manageVoters()">
         Manage Voters
       </button>
