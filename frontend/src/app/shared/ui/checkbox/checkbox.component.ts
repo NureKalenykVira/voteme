@@ -29,6 +29,7 @@ export class CheckboxComponent implements ControlValueAccessor {
   @Input() id = '';
 
   _checked = false;
+  _disabled = false;
   private readonly cdr = inject(ChangeDetectorRef);
 
   onChange: (v: boolean) => void = () => {};
@@ -47,7 +48,13 @@ export class CheckboxComponent implements ControlValueAccessor {
     this.onTouched = fn;
   }
 
+  setDisabledState(isDisabled: boolean): void {
+    this._disabled = isDisabled;
+    this.cdr.markForCheck();
+  }
+
   toggle(): void {
+    if (this._disabled) return;
     this._checked = !this._checked;
     this.onChange(this._checked);
     this.onTouched();

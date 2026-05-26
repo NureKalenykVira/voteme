@@ -1,0 +1,38 @@
+<ui-public-header />
+
+<div class="vote-page">
+  <div *ngIf="notFound()" class="vote-page__not-found">
+    <p>Election not found.</p>
+  </div>
+
+  <ng-container *ngIf="election()">
+    <span class="vote-page__label">Options</span>
+
+    <div class="vote-page__list">
+      <div
+        *ngFor="let option of options(); let i = index"
+        class="option-card"
+        [ngClass]="cardClass(i)"
+      >
+        <div class="option-card__body">
+          <span class="option-card__badge">OPTION {{ i + 1 }}</span>
+          <h3 class="option-card__name">{{ option.title }}</h3>
+          <p *ngIf="option.description" class="option-card__desc">{{ option.description }}</p>
+        </div>
+        <img
+          *ngIf="photoUrl(option.photo_url) as src"
+          class="option-card__photo"
+          [src]="src"
+          [alt]="option.title"
+        />
+      </div>
+    </div>
+
+    <div class="vote-page__actions">
+      <button type="button" class="vote-page__cast-btn" (click)="castVote()">
+        Cast my vote
+        <span class="vote-page__cast-arrow" aria-hidden="true">&#8594;</span>
+      </button>
+    </div>
+  </ng-container>
+</div>

@@ -1,5 +1,8 @@
 <div class="field">
-  <label [for]="id" class="label">{{ label }}</label>
+  <label [for]="id" class="label"
+    >{{ labelText
+    }}<span *ngIf="showAsterisk" class="required-mark" aria-hidden="true">*</span></label
+  >
   <input
     [id]="id"
     [type]="type"
