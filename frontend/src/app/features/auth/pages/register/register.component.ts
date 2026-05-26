@@ -9,7 +9,7 @@ import {
   Validators,
 } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { AuthLayoutComponent } from '../../../../shared/ui/auth-layout/auth-layout.component';
 import { TextInputComponent } from '../../../../shared/ui/text-input/text-input.component';
 import { PasswordInputComponent } from '../../../../shared/ui/password-input/password-input.component';
@@ -46,6 +46,7 @@ function passwordMatchValidator(control: AbstractControl): ValidationErrors | nu
 export class RegisterComponent {
   private readonly fb = inject(FormBuilder);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   private readonly authApi = inject(AuthApiService);
 
   readonly loading = signal(false);
@@ -94,6 +95,8 @@ export class RegisterComponent {
   }
 
   goToLogin(): void {
-    this.router.navigate(['/auth/login']);
+    const returnUrl = this.route.snapshot.queryParams['returnUrl'];
+    const extras = returnUrl ? { queryParams: { returnUrl } } : {};
+    this.router.navigate(['/auth/login'], extras);
   }
 }

@@ -77,3 +77,9 @@ class ResetPasswordRequest(BaseModel):
         if not _PASSWORD_DIGIT_RE.search(value):
             raise ValueError("Password must contain at least one digit")
         return value
+
+
+class BecomeOrganizerResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    user: UserResponse

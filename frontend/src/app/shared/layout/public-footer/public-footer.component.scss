@@ -1,0 +1,153 @@
+@use '../../../../styles/mixins' as mx;
+
+.footer {
+  background: #252529;
+  padding: 32px 20px 20px;
+
+  &__inner {
+    padding: 0 48px;
+
+    @include mx.respond-below(mx.$bp-sm) {
+      padding: 0 20px;
+    }
+  }
+
+  &__cols {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 32px;
+
+    @include mx.respond-below(mx.$bp-md) {
+      grid-template-columns: 1fr 1fr;
+      gap: 40px 32px;
+    }
+
+    @include mx.respond-below(mx.$bp-sm) {
+      grid-template-columns: 1fr;
+      gap: 32px;
+    }
+  }
+
+  &__col {
+    display: flex;
+    flex-direction: column;
+
+    &--brand {
+      gap: 24px;
+    }
+
+    &--nav,
+    &--legal {
+      gap: 14px;
+      align-items: center;
+      text-align: center;
+    }
+  }
+
+  &__brand {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+    text-decoration: none;
+    line-height: 1;
+  }
+
+  &__brand-base {
+    color: var(--vm-text-white);
+  }
+
+  &__brand-accent {
+    color: var(--vm-lime);
+  }
+
+  &__cta-group {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    max-width: 200px;
+  }
+
+  &__cta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 12px 8px 20px;
+    font-size: 18px;
+    font-weight: 600;
+    font-family: inherit;
+    border-radius: var(--vm-radius-pill);
+    text-decoration: none;
+    transition: background 0.15s;
+
+    &--purple {
+      color: var(--vm-text-white);
+      background: var(--vm-purple);
+
+      &:hover {
+        background: #4a3fd4;
+      }
+    }
+
+    &--lime {
+      color: var(--vm-text-dark);
+      background: var(--vm-lime);
+
+      &:hover {
+        background: var(--vm-lime-hover);
+      }
+    }
+  }
+
+  &__cta-arrow {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+
+    &--dark {
+      filter: brightness(0);
+    }
+  }
+
+  &__heading {
+    margin: 0 0 6px;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+
+    &--nav {
+      color: var(--vm-purple);
+    }
+
+    &--legal {
+      color: var(--vm-lime);
+    }
+  }
+
+  &__link {
+    color: var(--vm-text-white);
+    font-size: 16px;
+    font-weight: 500;
+    text-decoration: none;
+    transition: color 0.15s;
+  }
+
+  &__col--nav &__link:hover {
+    color: var(--vm-purple);
+  }
+
+  &__col--legal &__link:hover {
+    color: var(--vm-lime);
+  }
+
+  &__bottom {
+    margin-top: 40px;
+  }
+
+  &__copy {
+    font-size: 13px;
+    font-weight: 400;
+    color: rgba(255, 255, 255, 0.5);
+  }
+}

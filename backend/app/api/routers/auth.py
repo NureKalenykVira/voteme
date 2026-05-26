@@ -8,6 +8,7 @@ from app.api.deps import get_current_user, get_db
 from app.models.user import User
 from app.repositories.user_repository import UserRepository
 from app.schemas.auth import (
+    BecomeOrganizerResponse,
     ConfirmEmailResponse,
     ForgotPasswordRequest,
     LoginRequest,
@@ -201,3 +202,25 @@ async def upload_avatar(
     await session.commit()
     await session.refresh(user)
     return UserResponse.model_validate(user)
+
+
+@router.post(
+    "/become-organizer",
+    response_model=BecomeOrganizerResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Upgrade current user role from voter to organizer",
+    responses={
+        401: {"description": "Missing or invalid token"},
+        403: {"description": "Email confirmation required to become an organizer"},
+        409: {"description": "Role is already organizer or higher"},
+    },
+)
+async def become_organizer(
+    session: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> BecomeOrganizerResponse:
+    new_token, user = await _auth_service.become_organizer(session, current_user)
+    return BecomeOrganizerResponse(
+        access_token=new_token,
+        user=UserResponse.model_validate(user),
+    )

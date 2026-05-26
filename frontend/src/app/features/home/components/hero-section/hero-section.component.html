@@ -1,0 +1,50 @@
+<section class="hero">
+  <div class="hero__grid">
+
+    <!-- Card 1: primary — col 1, spans 2 rows -->
+    <app-hero-card tone="purple" class="card-primary">
+      <div class="card-primary__content">
+        <h1 class="card-primary__headline">
+          <span class="card-primary__headline--white">BLOCKCHAIN</span>
+          <span class="card-primary__headline--lime">VOTING</span>
+          <span class="card-primary__headline--white">PLATFORM</span>
+          <span class="card-primary__headline--white">FOR EVERYONE</span>
+        </h1>
+
+        <div class="card-primary__actions">
+          <a routerLink="/join" class="hero-btn hero-btn--primary">
+            Cast a vote
+          </a>
+          <a routerLink="/elections/new" class="hero-btn hero-btn--outline-light">
+            Create Voting
+          </a>
+        </div>
+      </div>
+    </app-hero-card>
+
+    <!-- Card 2: info — col 2, row 1 -->
+    <app-hero-card tone="purple" class="card-info">
+      <p class="card-info__text">
+        Transparent and secure elections powered by Ethereum blockchain
+      </p>
+    </app-hero-card>
+
+    <!-- Card 3: visual — col 3, spans 2 rows -->
+    <app-hero-card tone="purple" class="card-visual">
+      <div class="card-visual__placeholder">
+        <span class="card-visual__icon">&#128249;</span>
+      </div>
+    </app-hero-card>
+
+    <!-- Card 4: badge/lime — col 2, row 2 -->
+    <app-hero-card tone="lime" class="card-badge">
+      <div class="card-badge__content">
+        <img src="/assets/main/logo.svg" alt="" class="card-badge__icon" />
+        <p class="card-badge__text">
+          Real-time results open for public verification!
+        </p>
+      </div>
+    </app-hero-card>
+
+  </div>
+</section>

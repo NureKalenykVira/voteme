@@ -1,0 +1,52 @@
+@use '../../../../styles/mixins' as mx;
+
+.faq-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  width: 100%;
+  padding: 12px 12px 12px 28px;
+  background: var(--vm-text-white);
+  border-radius: var(--vm-radius-pill);
+
+  @include mx.respond-below(mx.$bp-sm) {
+    padding: 16px 16px 16px 24px;
+    gap: 16px;
+  }
+
+  &__text {
+    font-size: clamp(13px, 1.4vw, 18px);
+    font-weight: 900;
+    line-height: 1;
+    letter-spacing: -0.5px;
+    color: var(--vm-text-dark);
+  }
+
+  &__action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    text-decoration: none;
+    transition:
+      opacity 0.15s,
+      transform 0.15s;
+
+    &:hover {
+      opacity: 0.8;
+      transform: scale(1.06);
+    }
+  }
+
+  &__arrow {
+    width: 44px;
+    height: 44px;
+    filter: brightness(0) saturate(100%) invert(39%) sepia(71%) saturate(594%) hue-rotate(204deg) brightness(102%) contrast(95%);
+
+    @include mx.respond-below(mx.$bp-sm) {
+      width: 36px;
+      height: 36px;
+    }
+  }
+}

@@ -1,0 +1,107 @@
+<ui-public-header />
+
+<div class="my-votings">
+  <div class="my-votings__hero">
+    <h1 class="my-votings__hero-title">My votings</h1>
+    <span class="my-votings__hero-logo" aria-hidden="true"></span>
+  </div>
+</div>
+
+<div class="my-votings__content">
+  <div class="my-votings__inner">
+    <div class="my-votings__filter-bar">
+      <div class="my-votings__status-wrapper">
+        <button class="my-votings__filter-btn my-votings__filter-btn--all" [class.is-open]="showStatusDropdown()" (click)="toggleStatusDropdown()">
+          <span class="my-votings__btn-icon my-votings__btn-icon--filter"></span>
+          {{ statusLabel() }}
+          <span class="my-votings__btn-icon my-votings__btn-icon--arrow"></span>
+        </button>
+        @if (showStatusDropdown()) {
+          <div class="my-votings__status-dropdown">
+            @for (opt of statusOptions; track opt.value) {
+              <button
+                class="my-votings__status-option"
+                [class.my-votings__status-option--active]="statusFilter() === opt.value"
+                (click)="selectStatus(opt.value, opt.label)"
+              >{{ opt.label }}</button>
+            }
+          </div>
+        }
+      </div>
+      <div class="my-votings__search-wrapper" [class.is-active]="showSearch()">
+        @if (!showSearch()) {
+          <button class="my-votings__filter-btn my-votings__filter-btn--search" (click)="toggleSearch()">
+            Search
+            <span class="my-votings__btn-icon my-votings__btn-icon--search"></span>
+          </button>
+        } @else {
+          <div class="my-votings__search-box">
+            <span class="my-votings__btn-icon my-votings__btn-icon--search"></span>
+            <input
+              class="my-votings__search-input"
+              type="text"
+              placeholder="Search by title..."
+              [value]="searchQuery()"
+              (input)="onSearchInput($event)"
+              autofocus
+            />
+            <button class="my-votings__search-close" (click)="closeSearch()">&#x2715;</button>
+          </div>
+        }
+      </div>
+    </div>
+
+    @if (loading()) {
+      <div class="my-votings__state">Loading...</div>
+    } @else if (error()) {
+      <div class="my-votings__state my-votings__state--error">{{ error() }}</div>
+    } @else if (filteredElections().length === 0) {
+      <div class="my-votings__state">No votings found</div>
+    } @else {
+      <div class="my-votings__cards">
+        @for (election of filteredElections(); track election.id) {
+          <div class="my-votings__card" [ngClass]="getCardClass(election.status)">
+            <!-- Left -->
+            <div class="mv-card__left">
+              <span class="mv-card__badge">{{ getStatusLabel(election.status) }}</span>
+              <h2 class="mv-card__title">{{ election.title }}</h2>
+              @if (election.description) {
+                <p class="mv-card__desc">{{ election.description }}</p>
+              }
+            </div>
+            <!-- Right -->
+            <div class="mv-card__right">
+              <div class="mv-card__meta">
+                <span class="mv-card__meta-label">Started:</span>
+                <span class="mv-card__meta-value">{{ formatDate(election.start_date_time) }}</span>
+                <span class="mv-card__meta-label">Ends:</span>
+                <span class="mv-card__meta-value">{{ formatDate(election.end_date_time) }}</span>
+                <span class="mv-card__meta-label">Created by:</span>
+                <span class="mv-card__meta-value">{{ isOrganizer(election) ? 'You' : 'Organizer' }}</span>
+              </div>
+              <div class="mv-card__actions">
+                @if (isOrganizer(election)) {
+                  <button class="mv-card__btn mv-card__btn--outline" (click)="navigateEdit(election.id)">
+                    Edit voting
+                    <span class="mv-card__btn-icon mv-card__btn-icon--purple" aria-hidden="true"></span>
+                  </button>
+                }
+                <button class="mv-card__btn mv-card__btn--filled" (click)="navigateDetail(election.invitation_code, election.id)">
+                  View details
+                  <span class="mv-card__btn-icon mv-card__btn-icon--white" aria-hidden="true"></span>
+                </button>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    }
+    <!-- Pagination -->
+    <div class="my-votings__pagination">
+      <button class="my-votings__page-btn" [disabled]="!hasPrev()" (click)="prevPage()">&#8592; Previous</button>
+      <button class="my-votings__page-btn" [disabled]="!hasNext()" (click)="nextPage()">Next &#8594;</button>
+    </div>
+  </div>
+</div>
+
+<ui-public-footer />

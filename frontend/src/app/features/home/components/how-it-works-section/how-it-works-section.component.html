@@ -1,0 +1,37 @@
+<section class="hiw">
+  <div class="hiw__decor" aria-hidden="true">
+    <img src="/assets/main/logo.svg" alt="" class="hiw__decor-icon hiw__decor-icon--1" />
+    <img src="/assets/main/logo.svg" alt="" class="hiw__decor-icon hiw__decor-icon--2" />
+    <img src="/assets/main/logo.svg" alt="" class="hiw__decor-icon hiw__decor-icon--3" />
+    <img src="/assets/main/logo.svg" alt="" class="hiw__decor-icon hiw__decor-icon--4" />
+    <img src="/assets/main/logo.svg" alt="" class="hiw__decor-icon hiw__decor-icon--5" />
+    <img src="/assets/main/logo.svg" alt="" class="hiw__decor-icon hiw__decor-icon--6" />
+    <img src="/assets/main/logo.svg" alt="" class="hiw__decor-icon hiw__decor-icon--7" />
+    <img src="/assets/main/logo.svg" alt="" class="hiw__decor-icon hiw__decor-icon--8" />
+  </div>
+
+  <div class="hiw__inner">
+    <header class="hiw__head">
+      <h2 class="hiw__title">
+        <span class="hiw__title-text">HOW IT</span>
+        <span class="hiw__title-pill">WORKS?</span>
+      </h2>
+
+      <a routerLink="/auth/register" class="hiw__cta">
+        Get started
+        <img src="/assets/auth/arrow_right.svg" class="hiw__cta-arrow" alt="" />
+      </a>
+    </header>
+
+    <div class="hiw__grid">
+      <ui-step-card
+        *ngFor="let s of steps"
+        class="hiw__card"
+        [step]="s.step"
+        [title]="s.title"
+        [description]="s.description"
+        [variant]="s.variant"
+      />
+    </div>
+  </div>
+</section>

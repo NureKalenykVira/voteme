@@ -1,0 +1,213 @@
+@use '../../../../../styles/mixins' as mx;
+
+.hero {
+  background: #ffffff;
+  padding: 20px;
+  height: 70vh;
+
+  &__grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 16px;
+    max-width: 1440px;
+    margin: 0 auto;
+    height: calc(70vh - 40px);
+
+    @include mx.respond-below(mx.$bp-md) {
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: auto;
+    }
+
+    @include mx.respond-below(mx.$bp-sm) {
+      grid-template-columns: 1fr;
+    }
+  }
+}
+
+// Shared button-link style for hero CTAs
+.hero-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 14px 32px;
+  font-size: 23px;
+  font-weight: 700;
+  font-family: inherit;
+  border-radius: var(--vm-radius-pill);
+  text-decoration: none;
+  transition: background 0.15s, border-color 0.15s;
+  white-space: nowrap;
+  cursor: pointer;
+
+  &--primary {
+    background: var(--vm-lime);
+    color: var(--vm-text-dark);
+    border: 2px solid transparent;
+
+    &:hover {
+      background: var(--vm-lime-hover);
+    }
+  }
+
+  &--outline-light {
+    background: transparent;
+    color: var(--vm-text-white);
+    border: 2px solid var(--vm-border-light);
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.08);
+    }
+  }
+}
+
+// Card 1: primary — col 1, rows 1-2
+.card-primary {
+  grid-column: 1;
+  grid-row: 1 / 3;
+
+  @include mx.respond-below(mx.$bp-md) {
+    grid-column: 1 / 3;
+    grid-row: 1;
+  }
+
+  @include mx.respond-below(mx.$bp-sm) {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
+  &__content {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    height: 100%;
+    min-height: 400px;
+  }
+
+  &__headline {
+    display: flex;
+    flex-direction: column;
+    font-size: clamp(36px, 4vw, 56px);
+    font-weight: 900;
+    line-height: 1.05;
+    letter-spacing: -1px;
+    margin: 0 0 32px;
+
+    &--white {
+      color: var(--vm-text-white);
+    }
+
+    &--lime {
+      color: var(--vm-lime);
+    }
+  }
+
+  &__actions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+}
+
+// Card 2: info — col 2, row 1
+.card-info {
+  grid-column: 2;
+  grid-row: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+
+  @include mx.respond-below(mx.$bp-md) {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  @include mx.respond-below(mx.$bp-sm) {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
+  &__text {
+    color: var(--vm-text-white);
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1.3;
+    margin: 0;
+  }
+}
+
+// Card 3: visual — col 3, rows 1-2
+.card-visual {
+  grid-column: 3;
+  grid-row: 1 / 3;
+
+  @include mx.respond-below(mx.$bp-md) {
+    grid-column: 2;
+    grid-row: 2 / 4;
+  }
+
+  @include mx.respond-below(mx.$bp-sm) {
+    grid-column: 1;
+    grid-row: auto;
+    min-height: 200px;
+  }
+
+  &__placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    min-height: 300px;
+    opacity: 0.3;
+  }
+
+  &__icon {
+    font-size: 80px;
+  }
+}
+
+// Card 4: badge/lime — col 2, row 2
+.card-badge {
+  --hero-card-pt: 11px;
+
+  grid-column: 2;
+  grid-row: 2;
+
+  @include mx.respond-below(mx.$bp-md) {
+    grid-column: 1;
+    grid-row: 3;
+  }
+
+  @include mx.respond-below(mx.$bp-sm) {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
+  &__content {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    min-height: 160px;
+    padding-top: 125px;
+  }
+
+  &__icon {
+    position: absolute;
+    top: 0;
+    right: 0;
+    display: block;
+    width: 148px;
+    height: 148px;
+    object-fit: contain;
+  }
+
+  &__text {
+    font-size: 23px;
+    font-weight: 800;
+    color: var(--vm-text-dark);
+    margin: 0;
+    line-height: 1.3;
+  }
+}

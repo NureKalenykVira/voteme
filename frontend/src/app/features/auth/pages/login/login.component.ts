@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import {
   AuthLayoutComponent,
   DecoWord,
@@ -34,6 +34,7 @@ import { containsLetter } from '../../../../shared/validators/password.validator
 export class LoginComponent {
   private readonly fb = inject(FormBuilder);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   private readonly authApi = inject(AuthApiService);
   private readonly storage = inject(AuthStorageService);
 
@@ -66,7 +67,8 @@ export class LoginComponent {
       .subscribe({
         next: (resp) => {
           this.storage.setToken(resp.access_token);
-          this.router.navigate(['/home']);
+          const returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/home';
+          this.router.navigate([returnUrl]);
         },
         error: (err: HttpErrorResponse) => {
           this.loading.set(false);

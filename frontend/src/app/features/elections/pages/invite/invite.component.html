@@ -1,0 +1,128 @@
+<div class="invite-page">
+  <img src="/assets/vectors/invite_vector.svg" class="invite-page__bg" alt="" aria-hidden="true" />
+
+  <div class="invite-page__card">
+    <h1 class="invite-page__title">Your voting is ready! 🎉</h1>
+    <p class="invite-page__subtitle">Now invite your participants</p>
+
+    <!-- Share access -->
+    <span class="invite-page__badge">Share access</span>
+
+    <div class="invite-page__share">
+      <!-- QR box -->
+      <div class="invite-page__qr-box">
+        <qrcode
+          [qrdata]="inviteLink()"
+          [width]="96"
+          [margin]="1"
+          errorCorrectionLevel="M"
+          elementType="canvas"
+        />
+        <button type="button" class="invite-page__qr-download" (click)="downloadQr()">
+          Download
+        </button>
+      </div>
+
+      <!-- Copy fields -->
+      <div class="invite-page__copy-fields">
+        <div class="invite-page__field">
+          <label class="invite-page__label">Copy code</label>
+          <div class="invite-page__input-row">
+            <input class="invite-page__input" [value]="inviteCode()" readonly />
+            <button
+              type="button"
+              class="invite-page__copy-btn"
+              [class.invite-page__copy-btn--copied]="copiedCode()"
+              (click)="copyCode()"
+              aria-label="Copy code"
+            >
+              <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect
+                  x="7"
+                  y="7"
+                  width="10"
+                  height="10"
+                  rx="2"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                />
+                <path
+                  d="M13 7V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  stroke-linecap="round"
+                />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="invite-page__field">
+          <label class="invite-page__label">Copy link</label>
+          <div class="invite-page__input-row">
+            <input class="invite-page__input" [value]="inviteLink()" readonly />
+            <button
+              type="button"
+              class="invite-page__copy-btn"
+              [class.invite-page__copy-btn--copied]="copiedLink()"
+              (click)="copyLink()"
+              aria-label="Copy link"
+            >
+              <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect
+                  x="7"
+                  y="7"
+                  width="10"
+                  height="10"
+                  rx="2"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                />
+                <path
+                  d="M13 7V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  stroke-linecap="round"
+                />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <p class="invite-page__or">or</p>
+
+    <!-- Upload voter list -->
+    <span class="invite-page__badge">Upload voter list</span>
+
+    <div
+      class="invite-page__dropzone"
+      [class.invite-page__dropzone--dragover]="isDragOver()"
+      (click)="csvInput.click()"
+      (dragover)="onDragOver($event)"
+      (dragleave)="onDragLeave()"
+      (drop)="onDrop($event)"
+    >
+      <img
+        src="/assets/icons/upload.svg"
+        class="invite-page__upload-icon"
+        alt=""
+        aria-hidden="true"
+      />
+      <span *ngIf="csvFile()" class="invite-page__csv-name">{{ csvFile()!.name }}</span>
+      <input #csvInput type="file" accept=".csv" hidden (change)="onFileSelected($event)" />
+    </div>
+    <p class="invite-page__drop-hint">Drop CSV file here or click to upload</p>
+
+    <div class="invite-page__footer">
+      <button type="button" class="invite-page__manage-btn" (click)="manageVoters()">
+        Manage Voters
+      </button>
+      <button type="button" class="invite-page__done-btn" (click)="done()">
+        Done, go to my votings
+        <span class="invite-page__done-icon" aria-hidden="true"></span>
+      </button>
+    </div>
+  </div>
+</div>

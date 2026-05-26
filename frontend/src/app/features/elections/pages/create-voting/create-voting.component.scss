@@ -1,0 +1,314 @@
+.create-page {
+  min-height: 100vh;
+  background: #ffffff;
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 40px 20px;
+
+  &__bg {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 1;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  &__card {
+    background: var(--vm-purple);
+    border-radius: var(--vm-radius-card);
+    padding: 40px;
+    width: 100%;
+    max-width: 960px;
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__title {
+    color: #ffffff;
+    text-align: center;
+    font-size: 24px;
+    font-weight: 700;
+    margin: 0 0 32px;
+    flex: 0 0 auto;
+  }
+
+  &__form {
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__body {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+    margin-bottom: 32px;
+  }
+
+  // ─── Left panel ───────────────────────────────────────────────
+
+  &__left {
+    position: static;
+    align-self: start;
+  }
+
+  &__field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 16px;
+  }
+
+  &__label {
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: 500;
+  }
+
+  &__required {
+    color: #ef4444;
+  }
+
+  &__input {
+    background: transparent;
+    border: 2px solid rgba(255, 255, 255, 0.65);
+    border-radius: var(--vm-radius-pill);
+    padding: 10px 18px;
+    color: #ffffff;
+    font-size: 14px;
+    font-family: inherit;
+    width: 100%;
+    box-sizing: border-box;
+    outline: none;
+    transition: border-color 0.15s;
+
+    &::placeholder {
+      color: rgba(255, 255, 255, 0.45);
+    }
+
+    &:focus {
+      border-color: #ffffff;
+    }
+
+    &--error {
+      border-color: #ff6b6b;
+    }
+
+    &--half {
+      flex: 1;
+    }
+  }
+
+  &__textarea {
+    background: transparent;
+    border: 2px solid rgba(255, 255, 255, 0.65);
+    border-radius: 18px;
+    padding: 10px 18px;
+    color: #ffffff;
+    font-size: 14px;
+    font-family: inherit;
+    width: 100%;
+    box-sizing: border-box;
+    resize: vertical;
+    outline: none;
+    transition: border-color 0.15s;
+
+    &::placeholder {
+      color: rgba(255, 255, 255, 0.45);
+    }
+
+    &:focus {
+      border-color: #ffffff;
+    }
+  }
+
+  &__datetime {
+    display: flex;
+    gap: 8px;
+  }
+
+  &__datetime-error {
+    color: #ff9a9a;
+    font-size: 12px;
+    margin-top: 4px;
+    display: block;
+  }
+
+  &__manage-btn {
+    width: 100%;
+    background: #ffffff;
+    border: none;
+    border-radius: var(--vm-radius-pill);
+    color: var(--vm-purple);
+    font-size: 16px;
+    font-weight: 600;
+    font-family: inherit;
+    padding: 12px 24px;
+    cursor: pointer;
+    transition: opacity 0.15s;
+
+    &:hover {
+      opacity: 0.9;
+    }
+  }
+
+  // ─── Checkbox blue override (page-scoped) ─────────────────────
+
+  ::ng-deep ui-checkbox .custom-checkbox {
+    background: #5b4fe8;
+    border-color: #ffffff;
+  }
+
+  ::ng-deep ui-checkbox .custom-checkbox.checked {
+    background: #c8f135;
+    border-color: #c8f135;
+  }
+
+  ::ng-deep ui-checkbox .checkmark path {
+    stroke: #1a1a1a;
+  }
+
+  // ─── Right panel ──────────────────────────────────────────────
+
+  &__right {
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__options-label {
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: 600;
+    margin: 0 0 12px;
+    flex: 0 0 auto;
+  }
+
+  &__options-scroll {
+    padding-top: 14px;
+    padding-right: 4px;
+  }
+
+  &__add-btn {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 8px;
+    align-self: flex-end;
+    width: fit-content;
+    background: #ffffff;
+    border: none;
+    border-radius: var(--vm-radius-pill);
+    color: var(--vm-purple);
+    font-size: 14px;
+    font-weight: 600;
+    font-family: inherit;
+    padding: 10px 20px;
+    cursor: pointer;
+    transition: opacity 0.15s;
+    margin-top: 0;
+    flex: 0 0 auto;
+
+    &:hover {
+      opacity: 0.9;
+    }
+  }
+
+  &__add-icon {
+    width: 22px;
+    height: 22px;
+    display: block;
+    flex: 0 0 auto;
+  }
+
+  // ─── Action bar ───────────────────────────────────────────────
+
+  &__actions {
+    display: flex;
+    align-items: stretch;
+    gap: 12px;
+    padding-top: 28px;
+    flex: 0 0 auto;
+  }
+
+  &__btn {
+    flex: 1 1 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 11px 24px;
+    border-radius: var(--vm-radius-pill);
+    font-size: 16px;
+    font-weight: 700;
+    font-family: inherit;
+    border: none;
+    cursor: pointer;
+    transition: opacity 0.15s;
+
+    &:hover {
+      opacity: 0.88;
+    }
+
+    &--cancel {
+      background: #ffffff;
+      color: #5b4fe8;
+      justify-content: flex-start;
+    }
+
+    &--draft {
+      background: #252529;
+      color: #cbff00;
+      justify-content: flex-end;
+    }
+
+    &--publish {
+      background: var(--vm-lime);
+      color: var(--vm-text-dark);
+      justify-content: flex-end;
+    }
+  }
+
+  &__btn-icon {
+    display: inline-block;
+    width: 28px;
+    height: 28px;
+    flex: 0 0 auto;
+    background-color: currentColor;
+    -webkit-mask: url('/assets/auth/arrow_right.svg') center / 28px 28px no-repeat;
+    mask: url('/assets/auth/arrow_right.svg') center / 28px 28px no-repeat;
+
+    &--left {
+      order: -1;
+      transform: scaleX(-1);
+    }
+
+    &--right {
+      order: 1;
+    }
+  }
+
+  // ─── Responsive ───────────────────────────────────────────────
+
+  @media (max-width: 700px) {
+    &__card {
+      padding: 24px 16px;
+    }
+
+    &__body {
+      grid-template-columns: 1fr;
+    }
+
+    &__actions {
+      flex-direction: column;
+    }
+
+    &__btn {
+      width: 100%;
+    }
+  }
+}
