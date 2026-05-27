@@ -26,3 +26,9 @@ class VotingEvent(str, Enum):
     start_tick = "start_tick"
     end_tick = "end_tick"
     archive = "archive"
+
+
+class BlockchainRecordStatus(str, Enum):
+    pending = "pending"
+    confirmed = "confirmed"
+    failed = "failed"

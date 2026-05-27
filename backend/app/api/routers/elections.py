@@ -2,7 +2,7 @@ import uuid
 from pathlib import Path
 
 import aiofiles
-from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
+from fastapi import APIRouter, Depends, File, HTTPException, Query, Request, UploadFile, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user, get_db, get_optional_user, require_role
@@ -14,6 +14,9 @@ from app.schemas.voting import (
     BallotOptionResponse,
     BallotOptionUpdateRequest,
     CsvImportResponse,
+    MyVoteResponse,
+    VoteSubmitRequest,
+    VoteSubmitResponse,
     VoterListResponse,
     VoterResponse,
     VotingCreateRequest,
@@ -24,11 +27,14 @@ from app.schemas.voting import (
     VotingUpdateRequest,
 )
 from app.services.voting_service import VotingService
+from app.services.vote_service import VoteService
 
 router = APIRouter(tags=["Elections"])
 voter_router = APIRouter(tags=["Whitelist"])
+vote_router = APIRouter(tags=["Voting"])
 
 _voting_service = VotingService()
+_vote_service = VoteService()
 
 _BALLOT_PHOTO_DIR = Path("uploads/ballot_options")
 _ALLOWED_PHOTO_CONTENT_TYPES = {"image/jpeg", "image/png", "image/webp"}
@@ -490,3 +496,69 @@ async def remove_voter(
     await _voting_service.remove_voter(
         session, current_user, election_id, voter_id
     )
+
+
+
+@vote_router.post(
+    "/{election_id}/vote",
+    response_model=VoteSubmitResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Submit a vote in an active election",
+    description=(
+        "Submits a single vote for the authenticated user in the specified election. "
+        "Duplicate votes are rejected by a DB UNIQUE(voting_id, user_id) constraint. "
+        "For anonymous elections, the voter identity is never written to the audit log."
+    ),
+    responses={
+        401: {"description": "Missing or invalid token"},
+        403: {"description": "Caller is not eligible to vote in this election"},
+        404: {"description": "Election or ballot option not found"},
+        409: {"description": "Election is not active or voter has already voted"},
+        422: {"description": "Validation error"},
+    },
+)
+async def submit_vote(
+    election_id: uuid.UUID,
+    payload: VoteSubmitRequest,
+    request: Request,
+    session: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> VoteSubmitResponse:
+    ip_address = request.client.host if request.client else None
+    vote, tx_status = await _vote_service.submit_vote(
+        session,
+        current_user,
+        election_id,
+        payload.option_id,
+        ip_address=ip_address,
+    )
+    return VoteSubmitResponse(
+        vote_id=vote.id,
+        commitment_hash=vote.commitment_hash,
+        tx_status=tx_status,
+        submitted_at=vote.submitted_at,
+    )
+
+
+@vote_router.get(
+    "/{election_id}/my-vote",
+    response_model=MyVoteResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Get the current user vote record for an election",
+    description=(
+        "Returns whether the current user has voted in the election. "
+        "For anonymous elections, option_id and submitted_at are omitted from the response "
+        "even when has_voted=true. Returns has_voted=false for draft elections."
+    ),
+    responses={
+        401: {"description": "Missing or invalid token"},
+        404: {"description": "Election not found"},
+    },
+)
+async def get_my_vote(
+    election_id: uuid.UUID,
+    session: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> MyVoteResponse:
+    payload = await _vote_service.get_my_vote(session, current_user, election_id)
+    return MyVoteResponse(**payload)
