@@ -14,6 +14,7 @@ from app.core.security import (
 from app.models.user import User
 from app.repositories.audit_repository import AuditRepository
 from app.repositories.user_repository import UserRepository
+from app.repositories.voter_list_repository import VoterListRepository
 from app.schemas.auth import LoginRequest, RegisterRequest, UpdateProfileRequest
 from app.services.email_service import EmailService
 
@@ -27,6 +28,7 @@ class AuthService:
     def __init__(self) -> None:
         self._users = UserRepository()
         self._audit = AuditRepository()
+        self._voter_lists = VoterListRepository()
 
     async def register(
         self, session: AsyncSession, data: RegisterRequest
@@ -49,6 +51,7 @@ class AuthService:
             full_name=data.full_name,
         )
         await self._audit.create_entry(session, "USER_REGISTERED", actor_id=user.id, data={"email": user.email})
+        await self._voter_lists.link_user_by_email(session, user.email, user.id)
         await session.commit()
         await session.refresh(user)
 
@@ -85,6 +88,7 @@ class AuthService:
 
         token = create_access_token(sub=str(user.id), role=user.role)
         await self._audit.create_entry(session, "USER_LOGIN", actor_id=user.id)
+        await self._voter_lists.link_user_by_email(session, user.email, user.id)
         await session.commit()
         return token
 
@@ -100,6 +104,7 @@ class AuthService:
 
         await self._users.mark_confirmed(session, user)
         await self._audit.create_entry(session, "USER_CONFIRMED", actor_id=user.id)
+        await self._voter_lists.link_user_by_email(session, user.email.lower(), user.id)
         await session.commit()
         await session.refresh(user)
         return user
