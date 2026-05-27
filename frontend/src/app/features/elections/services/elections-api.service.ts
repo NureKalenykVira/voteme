@@ -11,6 +11,9 @@ import {
   CsvImportResult,
   ElectionListResponse,
   ElectionResponse,
+  MyVoteResponse,
+  VoteSubmitRequest,
+  VoteSubmitResponse,
   VoterListResponse,
   VoterResponse,
   VotingDetailResponse,
@@ -91,5 +94,16 @@ export class ElectionsApiService {
     };
     if (status) params['status'] = status;
     return this.http.get<ElectionListResponse>(this.apiUrl, { params });
+  }
+
+  submitVote(electionId: string, payload: VoteSubmitRequest): Observable<VoteSubmitResponse> {
+    return this.http.post<VoteSubmitResponse>(
+      `${this.apiUrl}/${electionId}/vote`,
+      payload,
+    );
+  }
+
+  getMyVote(electionId: string): Observable<MyVoteResponse> {
+    return this.http.get<MyVoteResponse>(`${this.apiUrl}/${electionId}/my-vote`);
   }
 }

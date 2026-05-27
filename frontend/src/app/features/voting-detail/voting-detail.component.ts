@@ -19,7 +19,7 @@ import {
 import { AuthStorageService } from '../../core/services/auth-storage.service';
 import { environment } from '../../../environments/environment';
 
-type ButtonState = 'cast_vote' | 'cast_vote_disabled' | 'already_voted' | 'go_to_results' | 'edit';
+type ButtonState = 'cast_vote' | 'cast_vote_disabled' | 'already_voted' | 'go_to_results' | 'edit' | 'edit_disabled';
 
 @Component({
   selector: 'app-voting-detail',
@@ -48,8 +48,10 @@ export class VotingDetailComponent implements OnInit, OnDestroy {
   get buttonState(): ButtonState {
     const e = this.election();
     if (!e) return 'cast_vote_disabled';
-    if (e.status === 'concluded') return 'go_to_results';
-    if (e.is_organizer && e.status !== 'active') return 'edit';
+    if (e.status === 'finished' || e.status === 'archived' || e.status === 'concluded') return 'go_to_results';
+    if (e.is_organizer && (e.status === 'draft' || e.status === 'published')) return 'edit';
+    if (e.is_organizer && e.status === 'active') return 'edit_disabled';
+    if (e.is_organizer) return 'cast_vote_disabled';
     if (e.user_has_voted) return 'already_voted';
     if (e.status === 'published' || e.status === 'draft') return 'cast_vote_disabled';
     return 'cast_vote';
@@ -81,7 +83,7 @@ export class VotingDetailComponent implements OnInit, OnDestroy {
   }
 
   private initTimer(e: VotingJoinResponse): void {
-    if (e.status === 'concluded') {
+    if (e.status === 'concluded' || e.status === 'finished' || e.status === 'archived') {
       this.hours.set(0);
       this.minutes.set(0);
       this.seconds.set(0);

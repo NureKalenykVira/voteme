@@ -116,3 +116,23 @@ export interface CsvImportResult {
   invalid_count: number;
   invalid_rows: CsvImportInvalidRow[];
 }
+
+
+export interface VoteSubmitRequest {
+  option_id: string;
+}
+
+export interface VoteSubmitResponse {
+  vote_id: string;
+  commitment_hash: string;
+  tx_status: 'pending' | 'confirmed' | 'failed';
+  submitted_at: string;
+}
+
+export interface MyVoteResponse {
+  has_voted: boolean;
+  option_id?: string;
+  submitted_at?: string;
+  commitment_hash?: string;
+  tx_status?: 'pending' | 'confirmed' | 'failed';
+}
