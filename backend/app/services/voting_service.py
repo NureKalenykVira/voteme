@@ -179,6 +179,10 @@ class VotingService:
             items, total = await self._votings.list_all(
                 session, status_filter, page, page_size
             )
+        elif actor.role == Role.voter:
+            items, total = await self._votings.list_for_voter(
+                session, actor.id, status_filter, page, page_size
+            )
         else:
             items, total = await self._votings.list_for_organizer(
                 session, actor.id, status_filter, page, page_size
@@ -492,6 +496,13 @@ class VotingService:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Election not found",
             )
+
+        if actor is not None and voting.created_by != actor.id:
+            await self._voter_lists.ensure_member(
+                session, voting.id, actor.email, actor.id
+            )
+            await session.commit()
+
         already_voted = await self._votings.count_participants(session, voting.id)
 
         organizer = await self._users.get_by_id(session, voting.created_by)

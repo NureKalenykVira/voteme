@@ -1,38 +1,225 @@
-<ui-public-header />
-
 <div class="vote-page">
-  <div *ngIf="notFound()" class="vote-page__not-found">
-    <p>Election not found.</p>
-  </div>
+  <img src="/assets/vectors/step_vector.svg" class="vote-page__bg" alt="" aria-hidden="true" />
 
-  <ng-container *ngIf="election()">
-    <span class="vote-page__label">Options</span>
-
-    <div class="vote-page__list">
-      <div
-        *ngFor="let option of options(); let i = index"
-        class="option-card"
-        [ngClass]="cardClass(i)"
-      >
-        <div class="option-card__body">
-          <span class="option-card__badge">OPTION {{ i + 1 }}</span>
-          <h3 class="option-card__name">{{ option.title }}</h3>
-          <p *ngIf="option.description" class="option-card__desc">{{ option.description }}</p>
-        </div>
-        <img
-          *ngIf="photoUrl(option.photo_url) as src"
-          class="option-card__photo"
-          [src]="src"
-          [alt]="option.title"
-        />
+  @if (notFound()) {
+    <div class="vote-page__card vote-page__card--narrow">
+      <p class="vote-page__not-found">Election not found.</p>
+    </div>
+  } @else if (election(); as e) {
+    <div class="vote-page__card" [class.vote-page__card--step3]="step() === 3">
+      <!-- Step indicator -->
+      <div class="vote-page__steps" role="list">
+        <span class="vote-page__step" [class.vote-page__step--active]="step() >= 1" role="listitem"
+          >Fill in</span
+        >
+        <span class="vote-page__step-arrow" aria-hidden="true">&#8594;</span>
+        <span class="vote-page__step" [class.vote-page__step--active]="step() >= 2" role="listitem"
+          >Preview</span
+        >
+        <span class="vote-page__step-arrow" aria-hidden="true">&#8594;</span>
+        <span class="vote-page__step" [class.vote-page__step--active]="step() >= 3" role="listitem"
+          >Done</span
+        >
       </div>
-    </div>
 
-    <div class="vote-page__actions">
-      <button type="button" class="vote-page__cast-btn" (click)="castVote()">
-        Cast my vote
-        <span class="vote-page__cast-arrow" aria-hidden="true">&#8594;</span>
-      </button>
+      <!-- Election header -->
+      @if (step() < 3) {
+        <div class="vote-page__header">
+          <span class="vote-page__title-pill">{{ e.title }}</span>
+          <p class="vote-page__subtitle">
+            @if (step() === 2) {
+              Review your choice
+            } @else {
+              Cast your vote
+            }
+          </p>
+        </div>
+      }
+
+      <!-- Error notice -->
+      @if (submitState() === 'error') {
+        <div class="vote-page__notice vote-page__notice--error">
+          {{ errorMessage() }}
+        </div>
+      }
+
+      <!-- Step 1 — Fill in -->
+      @if (step() === 1) {
+        <div class="vote-page__list">
+          @for (option of options(); track option.id; let i = $index) {
+            <button
+              type="button"
+              class="option-card"
+              [class.option-card--selected]="isSelected(option.id)"
+              [disabled]="alreadyVoted() || submitState() === 'submitting'"
+              (click)="selectOption(option.id)"
+            >
+              <span class="option-card__check" aria-hidden="true">
+                @if (isSelected(option.id)) {
+                  <img src="/assets/icons/yes_icon.svg" class="option-card__check-icon" alt="" />
+                } @else {
+                  <span class="option-card__check-empty"></span>
+                }
+              </span>
+
+              <div class="option-card__body">
+                <span class="option-card__badge">OPTION {{ i + 1 }}</span>
+                <h3 class="option-card__name">{{ option.title }}</h3>
+                @if (option.description) {
+                  <p class="option-card__desc">{{ option.description }}</p>
+                }
+              </div>
+
+              @if (photoUrl(option.photo_url); as src) {
+                <img class="option-card__photo" [src]="src" [alt]="option.title" />
+              }
+            </button>
+          }
+        </div>
+
+        <div class="vote-page__footer vote-page__footer--end">
+          <button
+            type="button"
+            class="vote-page__primary-btn"
+            [disabled]="!canSubmit()"
+            (click)="goToPreview()"
+          >
+            Preview my choice
+            <span class="vote-page__primary-btn-arrow" aria-hidden="true"></span>
+          </button>
+        </div>
+      }
+
+      <!-- Step 2 — Preview -->
+      @if (step() === 2) {
+        <p class="vote-page__preview-label">You selected:</p>
+
+        @if (selectedOption(); as opt) {
+          <div class="vote-page__list">
+            <div class="option-card option-card--selected option-card--static">
+              <span class="option-card__check" aria-hidden="true">
+                <img src="/assets/icons/yes_icon.svg" class="option-card__check-icon" alt="" />
+              </span>
+
+              <div class="option-card__body">
+                <span class="option-card__badge">OPTION {{ selectedOptionIndex() + 1 }}</span>
+                <h3 class="option-card__name">{{ opt.title }}</h3>
+                @if (opt.description) {
+                  <p class="option-card__desc">{{ opt.description }}</p>
+                }
+              </div>
+
+              @if (photoUrl(opt.photo_url); as src) {
+                <img class="option-card__photo" [src]="src" [alt]="opt.title" />
+              }
+            </div>
+          </div>
+        }
+
+        <p class="vote-page__warning">Your vote is final and cannot be changed after submission</p>
+
+        <div class="vote-page__footer vote-page__footer--split">
+          <button
+            type="button"
+            class="vote-page__primary-btn vote-page__primary-btn--reversed"
+            [disabled]="submitState() === 'submitting'"
+            (click)="backToStep1()"
+          >
+            <span
+              class="vote-page__primary-btn-arrow vote-page__primary-btn-arrow--left"
+              aria-hidden="true"
+            ></span>
+            Change my choice
+          </button>
+          <button
+            type="button"
+            class="vote-page__primary-btn vote-page__primary-btn--lime"
+            [disabled]="submitState() === 'submitting' || !canSubmit()"
+            (click)="confirmVote()"
+          >
+            @if (submitState() === 'submitting') {
+              Submitting...
+            } @else {
+              Submit my vote
+              <span
+                class="vote-page__primary-btn-arrow vote-page__primary-btn-arrow--dark"
+                aria-hidden="true"
+              ></span>
+            }
+          </button>
+        </div>
+      }
+
+      <!-- Step 3 — Done -->
+      @if (step() === 3) {
+        <img src="/assets/main/logo.svg" class="vote-page__done-badge vote-page__done-badge--1" aria-hidden="true" alt="" />
+        <img src="/assets/main/logo.svg" class="vote-page__done-badge vote-page__done-badge--2" aria-hidden="true" alt="" />
+        <img src="/assets/main/logo.svg" class="vote-page__done-badge vote-page__done-badge--3" aria-hidden="true" alt="" />
+        <img src="/assets/main/logo.svg" class="vote-page__done-badge vote-page__done-badge--4" aria-hidden="true" alt="" />
+        <img src="/assets/main/logo.svg" class="vote-page__done-badge vote-page__done-badge--5" aria-hidden="true" alt="" />
+        <img src="/assets/main/logo.svg" class="vote-page__done-badge vote-page__done-badge--6" aria-hidden="true" alt="" />
+        <div class="vote-page__done-content">
+          <h2 class="vote-page__done-title">Your vote has been cast!</h2>
+          <p class="vote-page__done-sub">
+            Your choice has been recorded and secured on Ethereum blockchain
+          </p>
+
+          @if (commitmentHash(); as hash) {
+            <div class="vote-page__done-box">
+              <p class="vote-page__done-box-label">Your confirmation ID:</p>
+              <div class="vote-page__done-hash-row">
+                <input class="vote-page__done-hash-input" type="text" [value]="hash" readonly />
+                <button
+                  type="button"
+                  class="vote-page__done-copy-btn"
+                  [class.vote-page__done-copy-btn--copied]="copiedHash()"
+                  (click)="copyHash(hash)"
+                  aria-label="Copy confirmation ID"
+                >
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 18 18"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <rect
+                      x="6"
+                      y="6"
+                      width="10"
+                      height="10"
+                      rx="2"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                    />
+                    <path
+                      d="M4 12H3C2.44772 12 2 11.5523 2 11V3C2 2.44772 2.44772 2 3 2H11C11.5523 2 12 2.44772 12 3V4"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                      stroke-linecap="round"
+                    />
+                  </svg>
+                </button>
+              </div>
+              <p class="vote-page__done-hint">Save this ID to verify your vote later</p>
+            </div>
+          }
+        </div>
+
+        <div class="vote-page__footer vote-page__footer--end">
+          <button
+            type="button"
+            class="vote-page__primary-btn vote-page__primary-btn--lime"
+            (click)="goHome()"
+          >
+            Back to my votings
+            <span
+              class="vote-page__primary-btn-arrow vote-page__primary-btn-arrow--dark"
+              aria-hidden="true"
+            ></span>
+          </button>
+        </div>
+      }
     </div>
-  </ng-container>
+  }
 </div>

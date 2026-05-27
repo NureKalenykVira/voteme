@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.enums import VotingStatus
 from app.models.ballot_option import BallotOption
+from app.models.voter_list import VoterList
 from app.models.voting import Voting
 from app.models.voting_participation import VotingParticipation
 
@@ -128,6 +129,42 @@ class VotingRepository:
         items_result = await session.execute(
             select(Voting)
             .where(*base_filter)
+            .order_by(Voting.created_at.desc())
+            .offset(offset)
+            .limit(page_size)
+        )
+        items = list(items_result.scalars().all())
+        return items, total
+
+    async def list_for_voter(
+        self,
+        session: AsyncSession,
+        voter_id: uuid.UUID,
+        status: Optional[VotingStatus],
+        page: int,
+        page_size: int,
+    ) -> tuple[Sequence[Voting], int]:
+        total_result = await session.execute(
+            select(func.count())
+            .select_from(Voting)
+            .join(VoterList, VoterList.voting_id == Voting.id)
+            .where(
+                VoterList.user_id == voter_id,
+                Voting.is_deleted == False,  # noqa: E712
+                *([Voting.status == status] if status is not None else []),
+            )
+        )
+        total = int(total_result.scalar_one())
+
+        offset = (page - 1) * page_size
+        items_result = await session.execute(
+            select(Voting)
+            .join(VoterList, VoterList.voting_id == Voting.id)
+            .where(
+                VoterList.user_id == voter_id,
+                Voting.is_deleted == False,  # noqa: E712
+                *([Voting.status == status] if status is not None else []),
+            )
             .order_by(Voting.created_at.desc())
             .offset(offset)
             .limit(page_size)

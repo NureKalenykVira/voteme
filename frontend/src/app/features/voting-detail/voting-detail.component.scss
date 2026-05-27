@@ -224,8 +224,13 @@
     transition: opacity 0.15s;
     margin-top: auto;
 
-    &:hover {
+    &:not(:disabled):hover {
       opacity: 0.88;
+    }
+
+    &:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
     }
   }
 

@@ -80,7 +80,7 @@
                 <span class="mv-card__meta-value">{{ isOrganizer(election) ? 'You' : 'Organizer' }}</span>
               </div>
               <div class="mv-card__actions">
-                @if (isOrganizer(election)) {
+                @if (isOrganizer(election) && (election.status === 'draft' || election.status === 'published')) {
                   <button class="mv-card__btn mv-card__btn--outline" (click)="navigateEdit(election.id)">
                     Edit voting
                     <span class="mv-card__btn-icon mv-card__btn-icon--purple" aria-hidden="true"></span>

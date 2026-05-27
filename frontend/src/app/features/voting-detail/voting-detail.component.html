@@ -78,6 +78,9 @@
           <button *ngSwitchCase="'cast_vote_disabled'" type="button" class="detail-page__vote-btn" disabled>
             Cast my vote
           </button>
+          <button *ngSwitchCase="'edit_disabled'" type="button" class="detail-page__vote-btn" disabled>
+            Edit voting
+          </button>
           <button *ngSwitchDefault type="button" class="detail-page__vote-btn" (click)="onPrimaryAction()">
             {{ buttonState === 'go_to_results' ? 'Go to results' : buttonState === 'edit' ? 'Edit voting' : 'Cast my vote' }}
           </button>
@@ -122,11 +125,11 @@
         <ui-button
           variant="primary"
           size="md"
-          [disabled]="buttonState === 'cast_vote_disabled'"
-          (click)="buttonState !== 'cast_vote_disabled' && onPrimaryAction()"
+          [disabled]="buttonState === 'cast_vote_disabled' || buttonState === 'edit_disabled'"
+          (click)="buttonState !== 'cast_vote_disabled' && buttonState !== 'edit_disabled' && onPrimaryAction()"
         >
-          {{ buttonState === 'go_to_results' ? 'Go to results' : buttonState === 'edit' ? 'Edit voting' : 'Cast my vote' }}
-          <img *ngIf="buttonState !== 'cast_vote_disabled'" src="/assets/auth/arrow_right.svg" class="cast-btn-arrow" alt="" />
+          {{ buttonState === 'go_to_results' ? 'Go to results' : (buttonState === 'edit' || buttonState === 'edit_disabled') ? 'Edit voting' : 'Cast my vote' }}
+          <img *ngIf="buttonState !== 'cast_vote_disabled' && buttonState !== 'edit_disabled'" src="/assets/auth/arrow_right.svg" class="cast-btn-arrow" alt="" />
         </ui-button>
       </div>
     </div>

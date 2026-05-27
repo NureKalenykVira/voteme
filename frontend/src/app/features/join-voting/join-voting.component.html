@@ -1,0 +1,43 @@
+<ui-auth-layout [vector]="vector" [vectorLogin]="true" [decoWords]="decoWords">
+  <div class="join-card">
+    <h1 class="join-card__title">Join a Voting</h1>
+    <p class="join-card__sub">Enter the code or paste the link you received</p>
+
+    <div class="join-card__section">
+      <label class="join-card__label" for="joinCode">Enter your code</label>
+      <input
+        id="joinCode"
+        class="join-card__input"
+        type="text"
+        [formControl]="codeCtrl"
+        (keydown.enter)="joinByCode()"
+      />
+      @if (codeError()) {
+        <span class="join-card__error">{{ codeError() }}</span>
+      }
+      <button type="button" class="join-card__btn" (click)="joinByCode()">Join</button>
+    </div>
+
+    <div class="join-card__or">or</div>
+
+    <div class="join-card__section">
+      <label class="join-card__label" for="joinLink">Paste invitation link</label>
+      <input
+        id="joinLink"
+        class="join-card__input"
+        type="text"
+        [formControl]="linkCtrl"
+        (keydown.enter)="joinByLink()"
+      />
+      @if (linkError()) {
+        <span class="join-card__error">{{ linkError() }}</span>
+      }
+      <button type="button" class="join-card__btn" (click)="joinByLink()">Join via link</button>
+    </div>
+
+    <button type="button" class="join-card__back" (click)="goHome()">
+      Back to home
+      <span class="join-card__back-arrow" aria-hidden="true"></span>
+    </button>
+  </div>
+</ui-auth-layout>

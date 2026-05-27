@@ -140,3 +140,22 @@ class CsvImportResponse(BaseModel):
     duplicate_count: int
     invalid_count: int
     invalid_rows: list[CsvImportInvalidRow]
+
+
+class VoteSubmitRequest(BaseModel):
+    option_id: uuid.UUID
+
+
+class VoteSubmitResponse(BaseModel):
+    vote_id: uuid.UUID
+    commitment_hash: str
+    tx_status: str
+    submitted_at: datetime
+
+
+class MyVoteResponse(BaseModel):
+    has_voted: bool
+    option_id: Optional[uuid.UUID] = None
+    submitted_at: Optional[datetime] = None
+    commitment_hash: Optional[str] = None
+    tx_status: Optional[str] = None

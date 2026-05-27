@@ -29,8 +29,12 @@ export const routes: Routes = [
   {
     path: 'vote/:id',
     canActivate: [authGuard],
+    loadComponent: () => import('./features/vote/vote.component').then((m) => m.VoteComponent),
+  },
+  {
+    path: 'join',
     loadComponent: () =>
-      import('./features/vote/vote.component').then((m) => m.VoteComponent),
+      import('./features/join-voting/join-voting.component').then((m) => m.JoinVotingComponent),
   },
   {
     path: 'join/:code',

@@ -1,7 +1,8 @@
 import uuid
 from typing import Optional
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.voter_list import VoterList
@@ -78,6 +79,43 @@ class VoterListRepository:
         session.add(voter)
         await session.flush()
         return voter
+
+    async def ensure_member(
+        self,
+        session: AsyncSession,
+        voting_id: uuid.UUID,
+        email: str,
+        user_id: uuid.UUID,
+    ) -> None:
+        stmt = (
+            pg_insert(VoterList)
+            .values(
+                voting_id=voting_id,
+                email=email.lower(),
+                user_id=user_id,
+            )
+            .on_conflict_do_update(
+                index_elements=["voting_id", "email"],
+                set_={"user_id": user_id},
+                where=VoterList.user_id.is_(None),
+            )
+        )
+        await session.execute(stmt)
+
+    async def link_user_by_email(
+        self,
+        session: AsyncSession,
+        email: str,
+        user_id: uuid.UUID,
+    ) -> None:
+        await session.execute(
+            update(VoterList)
+            .where(
+                func.lower(VoterList.email) == email.lower(),
+                VoterList.user_id.is_(None),
+            )
+            .values(user_id=user_id)
+        )
 
     async def delete(
         self, session: AsyncSession, voter: VoterList
