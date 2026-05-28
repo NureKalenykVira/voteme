@@ -70,6 +70,8 @@ class VotingResponse(BaseModel):
     created_by: uuid.UUID
     created_at: datetime
     updated_at: datetime
+    publish_tx_hash: Optional[str] = None
+    finalize_tx_hash: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -101,6 +103,8 @@ class VotingJoinResponse(BaseModel):
     options: list[BallotOptionResponse] = Field(default_factory=list)
     is_organizer: bool = False
     user_has_voted: bool = False
+    publish_tx_hash: Optional[str] = None
+    finalize_tx_hash: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -150,6 +154,7 @@ class VoteSubmitResponse(BaseModel):
     vote_id: uuid.UUID
     commitment_hash: str
     tx_status: str
+    tx_hash: Optional[str] = None
     submitted_at: datetime
 
 
@@ -159,3 +164,4 @@ class MyVoteResponse(BaseModel):
     submitted_at: Optional[datetime] = None
     commitment_hash: Optional[str] = None
     tx_status: Optional[str] = None
+    tx_hash: Optional[str] = None
