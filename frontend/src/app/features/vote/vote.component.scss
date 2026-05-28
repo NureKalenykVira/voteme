@@ -254,12 +254,37 @@
     opacity: 0.3;
     filter: brightness(0) invert(1) sepia(1) saturate(20) hue-rotate(50deg);
 
-    &--1 { width: 96px; top: 70px; left: 100px; }
-    &--2 { width: 78px; top: 50px; right: 120px; }
-    &--3 { width: 120px; top: 38%; left: 140px; transform: translateY(-50%); }
-    &--4 { width: 88px; top: 42%; right: 130px; }
-    &--5 { width: 128px; bottom: 70px; left: 110px; }
-    &--6 { width: 72px; bottom: 55px; right: 220px; }
+    &--1 {
+      width: 96px;
+      top: 70px;
+      left: 100px;
+    }
+    &--2 {
+      width: 78px;
+      top: 50px;
+      right: 120px;
+    }
+    &--3 {
+      width: 120px;
+      top: 38%;
+      left: 140px;
+      transform: translateY(-50%);
+    }
+    &--4 {
+      width: 88px;
+      top: 42%;
+      right: 130px;
+    }
+    &--5 {
+      width: 128px;
+      bottom: 70px;
+      left: 110px;
+    }
+    &--6 {
+      width: 72px;
+      bottom: 55px;
+      right: 220px;
+    }
   }
 
   &__done-content {
@@ -361,6 +386,36 @@
     font-size: 14px;
     font-weight: 500;
     line-height: 1.4;
+  }
+
+  &__tx-status {
+    font-size: 13px;
+    font-weight: 600;
+    margin: 0;
+    text-align: center;
+
+    &--pending {
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    &--confirmed {
+      color: #22c55e;
+    }
+
+    &--failed {
+      color: #f87171;
+    }
+  }
+
+  &__etherscan-link {
+    color: var(--vm-lime);
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
   }
 }
 

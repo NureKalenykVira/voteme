@@ -42,6 +42,8 @@ export class VoteComponent implements OnInit {
   readonly errorMessage = signal<string>('');
   readonly alreadyVoted = signal(false);
   readonly commitmentHash = signal<string | null>(null);
+  readonly txHash = signal<string | null>(null);
+  readonly txStatus = signal<string | null>(null);
 
   readonly step = signal<Step>(1);
   readonly copiedHash = signal(false);
@@ -85,6 +87,10 @@ export class VoteComponent implements OnInit {
         if (mv.has_voted) {
           this.alreadyVoted.set(true);
           this.commitmentHash.set(mv.commitment_hash ?? null);
+          if (mv.tx_hash) {
+            this.txHash.set(mv.tx_hash);
+          }
+          this.txStatus.set(mv.tx_status ?? null);
           if (mv.option_id) {
             this.selectedOptionId.set(mv.option_id);
           }
@@ -139,6 +145,10 @@ export class VoteComponent implements OnInit {
         this.submitState.set('submitted');
         this.alreadyVoted.set(true);
         this.commitmentHash.set(resp.commitment_hash);
+        if (resp.tx_hash) {
+          this.txHash.set(resp.tx_hash);
+        }
+        this.txStatus.set(resp.tx_status);
         this.step.set(3);
       },
       error: (err: HttpErrorResponse) => {
@@ -158,6 +168,10 @@ export class VoteComponent implements OnInit {
 
   goHome(): void {
     this.router.navigate(['/my-votings']);
+  }
+
+  etherscanUrl(hash: string): string {
+    return `https://sepolia.etherscan.io/tx/${hash}`;
   }
 
   copyHash(hash: string): void {

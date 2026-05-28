@@ -54,6 +54,8 @@ export interface VotingDetailResponse {
   created_by: string;
   created_at: string;
   updated_at: string;
+  publish_tx_hash?: string;
+  finalize_tx_hash?: string;
   options: BallotOptionResponse[];
 }
 
@@ -73,6 +75,8 @@ export interface VotingJoinResponse {
   options: BallotOptionResponse[];
   is_organizer: boolean;
   user_has_voted: boolean;
+  publish_tx_hash?: string;
+  finalize_tx_hash?: string;
 }
 
 export interface VoterResponse {
@@ -117,7 +121,6 @@ export interface CsvImportResult {
   invalid_rows: CsvImportInvalidRow[];
 }
 
-
 export interface VoteSubmitRequest {
   option_id: string;
 }
@@ -126,6 +129,7 @@ export interface VoteSubmitResponse {
   vote_id: string;
   commitment_hash: string;
   tx_status: 'pending' | 'confirmed' | 'failed';
+  tx_hash?: string;
   submitted_at: string;
 }
 
@@ -135,4 +139,5 @@ export interface MyVoteResponse {
   submitted_at?: string;
   commitment_hash?: string;
   tx_status?: 'pending' | 'confirmed' | 'failed';
+  tx_hash?: string;
 }

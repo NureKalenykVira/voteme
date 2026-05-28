@@ -152,17 +152,72 @@
 
       <!-- Step 3 — Done -->
       @if (step() === 3) {
-        <img src="/assets/main/logo.svg" class="vote-page__done-badge vote-page__done-badge--1" aria-hidden="true" alt="" />
-        <img src="/assets/main/logo.svg" class="vote-page__done-badge vote-page__done-badge--2" aria-hidden="true" alt="" />
-        <img src="/assets/main/logo.svg" class="vote-page__done-badge vote-page__done-badge--3" aria-hidden="true" alt="" />
-        <img src="/assets/main/logo.svg" class="vote-page__done-badge vote-page__done-badge--4" aria-hidden="true" alt="" />
-        <img src="/assets/main/logo.svg" class="vote-page__done-badge vote-page__done-badge--5" aria-hidden="true" alt="" />
-        <img src="/assets/main/logo.svg" class="vote-page__done-badge vote-page__done-badge--6" aria-hidden="true" alt="" />
+        <img
+          src="/assets/main/logo.svg"
+          class="vote-page__done-badge vote-page__done-badge--1"
+          aria-hidden="true"
+          alt=""
+        />
+        <img
+          src="/assets/main/logo.svg"
+          class="vote-page__done-badge vote-page__done-badge--2"
+          aria-hidden="true"
+          alt=""
+        />
+        <img
+          src="/assets/main/logo.svg"
+          class="vote-page__done-badge vote-page__done-badge--3"
+          aria-hidden="true"
+          alt=""
+        />
+        <img
+          src="/assets/main/logo.svg"
+          class="vote-page__done-badge vote-page__done-badge--4"
+          aria-hidden="true"
+          alt=""
+        />
+        <img
+          src="/assets/main/logo.svg"
+          class="vote-page__done-badge vote-page__done-badge--5"
+          aria-hidden="true"
+          alt=""
+        />
+        <img
+          src="/assets/main/logo.svg"
+          class="vote-page__done-badge vote-page__done-badge--6"
+          aria-hidden="true"
+          alt=""
+        />
         <div class="vote-page__done-content">
           <h2 class="vote-page__done-title">Your vote has been cast!</h2>
           <p class="vote-page__done-sub">
             Your choice has been recorded and secured on Ethereum blockchain
           </p>
+
+          <!-- Blockchain status -->
+          @if (txStatus() === 'pending') {
+            <p class="vote-page__tx-status vote-page__tx-status--pending">
+              Recording on blockchain...
+            </p>
+          }
+          @if (txStatus() === 'confirmed') {
+            <p class="vote-page__tx-status vote-page__tx-status--confirmed">Recorded on blockchain ✓</p>
+          }
+          @if (txStatus() === 'failed') {
+            <p class="vote-page__tx-status vote-page__tx-status--failed">
+              Blockchain recording failed — your vote is still valid
+            </p>
+          }
+          @if (txHash(); as hash) {
+            <a
+              class="vote-page__etherscan-link"
+              [href]="etherscanUrl(hash)"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              View on Etherscan ↗
+            </a>
+          }
 
           @if (commitmentHash(); as hash) {
             <div class="vote-page__done-box">
