@@ -132,6 +132,8 @@ async def get_election_by_code(
         options=options,
         is_organizer=is_organizer,
         user_has_voted=user_has_voted,
+        publish_tx_hash=voting.publish_tx_hash,
+        finalize_tx_hash=voting.finalize_tx_hash,
     )
 
 
@@ -167,6 +169,8 @@ async def get_election(
         created_by=voting.created_by,
         created_at=voting.created_at,
         updated_at=voting.updated_at,
+        publish_tx_hash=voting.publish_tx_hash,
+        finalize_tx_hash=voting.finalize_tx_hash,
         options=[BallotOptionResponse.model_validate(o) for o in options],
     )
 
@@ -536,6 +540,7 @@ async def submit_vote(
         vote_id=vote.id,
         commitment_hash=vote.commitment_hash,
         tx_status=tx_status,
+        tx_hash=None,
         submitted_at=vote.submitted_at,
     )
 

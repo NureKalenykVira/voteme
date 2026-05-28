@@ -66,3 +66,17 @@ class VoteRepository:
             select(func.count()).where(Vote.voting_id == voting_id)
         )
         return int(result.scalar_one() or 0)
+
+    async def list_for_voting_ordered(
+        self, session: AsyncSession, voting_id: uuid.UUID
+    ) -> list[Vote]:
+        """
+        Return all votes for a given election ordered by submitted_at ASC, id ASC.
+        Stable deterministic ordering for Merkle leaf assembly.
+        """
+        result = await session.execute(
+            select(Vote)
+            .where(Vote.voting_id == voting_id)
+            .order_by(Vote.submitted_at.asc(), Vote.id.asc())
+        )
+        return list(result.scalars().all())

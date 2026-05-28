@@ -40,6 +40,16 @@ from app.services.voting_fsm import (
     EVENT_AUDIT_ACTION,
     apply_transition,
 )
+from eth_utils import keccak
+
+from app.blockchain.client import (
+    election_id_to_uint256,
+    finalize_election_on_chain,
+    publish_election,
+)
+from app.database.session import AsyncSessionLocal
+from app.repositories.vote_repository import VoteRepository
+from app.utils.merkle import build_merkle_root
 from app.services.email_service import EmailService
 from app.core.config import settings
 
@@ -311,6 +321,9 @@ class VotingService:
         )
         await session.commit()
         await session.refresh(voting)
+
+        _fire_election_published(voting.id, voting.title)
+
         return voting
 
     async def archive_voting(
@@ -792,4 +805,116 @@ class VotingService:
                 "event": event.value,
             },
         )
+
+        if event == VotingEvent.end_tick and voting.status == VotingStatus.finished:
+            _fire_election_finalized(voting.id)
+
         return voting
+
+
+def _fire_election_published(voting_id: uuid.UUID, title: str) -> None:
+    """
+    Fire-and-forget background task that submits ElectionPublished on-chain
+    and stores the resulting tx hash in votings.publish_tx_hash.
+
+    Never raises into the caller.
+    """
+
+    async def _runner() -> None:
+        try:
+            params_hash = keccak(primitive=voting_id.bytes + title.encode("utf-8"))
+            election_id_int = election_id_to_uint256(voting_id)
+            tx_hash = await publish_election(election_id_int, params_hash)
+            if tx_hash is None:
+                return
+            async with AsyncSessionLocal() as bg_session:
+                voting_row = await bg_session.get(Voting, voting_id)
+                if voting_row is None:
+                    logger.warning(
+                        "election-published hook: voting %s not found when persisting tx_hash",
+                        voting_id,
+                    )
+                    return
+                voting_row.publish_tx_hash = tx_hash
+                await bg_session.commit()
+        except Exception as exc:
+            logger.error(
+                "election-published background task failed for voting_id=%s: %s",
+                voting_id,
+                exc,
+                exc_info=True,
+            )
+
+    try:
+        asyncio.get_running_loop().create_task(_runner())
+    except RuntimeError:
+        logger.warning(
+            "No running event loop; skipping election-published blockchain hook for voting %s",
+            voting_id,
+        )
+
+
+def _fire_election_finalized(voting_id: uuid.UUID) -> None:
+    """
+    Fire-and-forget background task that computes the merkle root of all votes
+    for this election, submits ElectionFinalized on-chain, and stores the
+    resulting tx hash in votings.finalize_tx_hash.
+
+    Reads votes via a fresh session to avoid coupling to the scheduler session
+    lifecycle. Never raises into the caller.
+    """
+
+    async def _runner() -> None:
+        vote_repo = VoteRepository()
+        try:
+            async with AsyncSessionLocal() as read_session:
+                votes = await vote_repo.list_for_voting_ordered(read_session, voting_id)
+
+            leaves: list[bytes] = []
+            for v in votes:
+                hex_value = v.commitment_hash
+                if hex_value.startswith("0x"):
+                    hex_value = hex_value[2:]
+                try:
+                    raw = bytes.fromhex(hex_value)
+                except ValueError:
+                    logger.error(
+                        "finalize hook: invalid commitment_hash for vote %s; skipping",
+                        v.id,
+                    )
+                    continue
+                leaves.append(keccak(primitive=raw))
+
+            merkle_root = build_merkle_root(leaves)
+            results_hash = keccak(primitive=merkle_root)
+            election_id_int = election_id_to_uint256(voting_id)
+            tx_hash = await finalize_election_on_chain(
+                election_id_int, merkle_root, results_hash
+            )
+            if tx_hash is None:
+                return
+            async with AsyncSessionLocal() as bg_session:
+                voting_row = await bg_session.get(Voting, voting_id)
+                if voting_row is None:
+                    logger.warning(
+                        "election-finalized hook: voting %s not found when persisting tx_hash",
+                        voting_id,
+                    )
+                    return
+                voting_row.finalize_tx_hash = tx_hash
+                await bg_session.commit()
+        except Exception as exc:
+            logger.error(
+                "election-finalized background task failed for voting_id=%s: %s",
+                voting_id,
+                exc,
+                exc_info=True,
+            )
+
+    try:
+        asyncio.get_running_loop().create_task(_runner())
+    except RuntimeError:
+        logger.warning(
+            "No running event loop; skipping election-finalized blockchain hook for voting %s",
+            voting_id,
+        )

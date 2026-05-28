@@ -12,8 +12,10 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.blockchain.client import commit_vote_on_chain, election_id_to_uint256
 from app.core.config import settings
 from app.core.enums import BlockchainRecordStatus, VotingAccessType, VotingStatus
+from app.database.session import AsyncSessionLocal
 from app.models.user import User
 from app.models.vote import Vote
 from app.models.voter_list import VoterList
@@ -169,7 +171,7 @@ class VoteService:
 
         await session.refresh(vote)
 
-        _schedule_mock_blockchain_submission(vote.id, commitment_hex)
+        _fire_vote_committed(vote.id, voting.id, commitment_hex)
 
         return vote, BlockchainRecordStatus.pending.value
 
@@ -196,11 +198,14 @@ class VoteService:
         bc = await self._blockchain.get_by_vote_id(session, vote.id)
         tx_status = bc.status.value if bc else None
 
+        tx_hash = bc.tx_hash if bc else None
+
         if voting.is_anonymous:
             return {
                 "has_voted": True,
                 "commitment_hash": vote.commitment_hash,
                 "tx_status": tx_status,
+                "tx_hash": tx_hash,
             }
         return {
             "has_voted": True,
@@ -208,27 +213,60 @@ class VoteService:
             "submitted_at": vote.submitted_at,
             "commitment_hash": vote.commitment_hash,
             "tx_status": tx_status,
+            "tx_hash": tx_hash,
         }
 
 
-def _schedule_mock_blockchain_submission(
-    vote_id: uuid.UUID, commitment_hex: str
+def _fire_vote_committed(
+    vote_id: uuid.UUID, voting_id: uuid.UUID, commitment_hex: str
 ) -> None:
+    """
+    Fire-and-forget background task that submits the vote commitment on-chain
+    and updates the blockchain_records row with the resulting tx hash.
+
+    Runs strictly AFTER the DB commit. Never raises into the caller.
+    """
+
     async def _runner() -> None:
+        bc_repo = BlockchainRecordRepository()
         try:
-            await asyncio.sleep(0)
-            logger.info(
-                "MOCK blockchain submission for vote_id=%s commitment=%s",
-                vote_id,
-                commitment_hex,
+            election_id_int = election_id_to_uint256(voting_id)
+            tx_hash = await commit_vote_on_chain(election_id_int, commitment_hex)
+            new_status = (
+                BlockchainRecordStatus.confirmed
+                if tx_hash is not None
+                else BlockchainRecordStatus.failed
             )
+            async with AsyncSessionLocal() as bg_session:
+                await bc_repo.update_tx_hash(bg_session, vote_id, tx_hash, new_status)
+                await bg_session.commit()
         except Exception as exc:
-            logger.error("Mock blockchain submission failed: %s", exc)
+            logger.error(
+                "vote-committed background task failed for vote_id=%s: %s",
+                vote_id,
+                exc,
+                exc_info=True,
+            )
+            try:
+                async with AsyncSessionLocal() as bg_session:
+                    await bc_repo.update_tx_hash(
+                        bg_session,
+                        vote_id,
+                        None,
+                        BlockchainRecordStatus.failed,
+                    )
+                    await bg_session.commit()
+            except Exception as nested:
+                logger.error(
+                    "vote-committed failure-state update also failed for vote_id=%s: %s",
+                    vote_id,
+                    nested,
+                )
 
     try:
         asyncio.get_running_loop().create_task(_runner())
     except RuntimeError:
         logger.warning(
-            "No running event loop; skipping mock blockchain submission for vote %s",
+            "No running event loop; skipping vote-committed blockchain hook for vote %s",
             vote_id,
         )

@@ -69,20 +69,66 @@
             class="detail-page__desc-toggle"
             [class.detail-page__desc-toggle--inline]="!descExpanded()"
             (click)="toggleDesc()"
-          >{{ descExpanded() ? 'Show less' : 'Show more' }}</button>
+          >
+            {{ descExpanded() ? 'Show less' : 'Show more' }}
+          </button>
+        </div>
+        <div
+          *ngIf="election()?.publish_tx_hash || election()?.finalize_tx_hash"
+          class="detail-page__tx-links"
+        >
+          <a
+            *ngIf="election()?.publish_tx_hash as hash"
+            [href]="'https://sepolia.etherscan.io/tx/' + hash"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="detail-page__tx-link"
+          >
+            Published on Etherscan ↗
+          </a>
+          <a
+            *ngIf="election()?.finalize_tx_hash as hash"
+            [href]="'https://sepolia.etherscan.io/tx/' + hash"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="detail-page__tx-link"
+          >
+            Finalized on Etherscan ↗
+          </a>
         </div>
         <ng-container [ngSwitch]="buttonState">
           <span *ngSwitchCase="'already_voted'" class="detail-page__voted-msg">
             You have already voted
           </span>
-          <button *ngSwitchCase="'cast_vote_disabled'" type="button" class="detail-page__vote-btn" disabled>
+          <button
+            *ngSwitchCase="'cast_vote_disabled'"
+            type="button"
+            class="detail-page__vote-btn"
+            disabled
+          >
             Cast my vote
           </button>
-          <button *ngSwitchCase="'edit_disabled'" type="button" class="detail-page__vote-btn" disabled>
+          <button
+            *ngSwitchCase="'edit_disabled'"
+            type="button"
+            class="detail-page__vote-btn"
+            disabled
+          >
             Edit voting
           </button>
-          <button *ngSwitchDefault type="button" class="detail-page__vote-btn" (click)="onPrimaryAction()">
-            {{ buttonState === 'go_to_results' ? 'Go to results' : buttonState === 'edit' ? 'Edit voting' : 'Cast my vote' }}
+          <button
+            *ngSwitchDefault
+            type="button"
+            class="detail-page__vote-btn"
+            (click)="onPrimaryAction()"
+          >
+            {{
+              buttonState === 'go_to_results'
+                ? 'Go to results'
+                : buttonState === 'edit'
+                  ? 'Edit voting'
+                  : 'Cast my vote'
+            }}
           </button>
         </ng-container>
       </div>
@@ -126,10 +172,25 @@
           variant="primary"
           size="md"
           [disabled]="buttonState === 'cast_vote_disabled' || buttonState === 'edit_disabled'"
-          (click)="buttonState !== 'cast_vote_disabled' && buttonState !== 'edit_disabled' && onPrimaryAction()"
+          (click)="
+            buttonState !== 'cast_vote_disabled' &&
+              buttonState !== 'edit_disabled' &&
+              onPrimaryAction()
+          "
         >
-          {{ buttonState === 'go_to_results' ? 'Go to results' : (buttonState === 'edit' || buttonState === 'edit_disabled') ? 'Edit voting' : 'Cast my vote' }}
-          <img *ngIf="buttonState !== 'cast_vote_disabled' && buttonState !== 'edit_disabled'" src="/assets/auth/arrow_right.svg" class="cast-btn-arrow" alt="" />
+          {{
+            buttonState === 'go_to_results'
+              ? 'Go to results'
+              : buttonState === 'edit' || buttonState === 'edit_disabled'
+                ? 'Edit voting'
+                : 'Cast my vote'
+          }}
+          <img
+            *ngIf="buttonState !== 'cast_vote_disabled' && buttonState !== 'edit_disabled'"
+            src="/assets/auth/arrow_right.svg"
+            class="cast-btn-arrow"
+            alt=""
+          />
         </ui-button>
       </div>
     </div>
