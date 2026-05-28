@@ -106,3 +106,12 @@ class Voting(Base):
         DateTime(timezone=True),
         nullable=True,
     )
+
+    publish_tx_hash: Mapped[Optional[str]] = mapped_column(
+        String(66),
+        nullable=True,
+    )
+    finalize_tx_hash: Mapped[Optional[str]] = mapped_column(
+        String(66),
+        nullable=True,
+    )
