@@ -13,6 +13,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.blockchain.client import commit_vote_on_chain, election_id_to_uint256
+from app.utils.merkle import build_merkle_proof, compute_root_from_proof
 from app.core.config import settings
 from app.core.enums import BlockchainRecordStatus, VotingAccessType, VotingStatus
 from app.database.session import AsyncSessionLocal
@@ -217,6 +218,100 @@ class VoteService:
         }
 
 
+    async def get_merkle_proof(
+        self,
+        session: AsyncSession,
+        actor: User,
+        voting_id: uuid.UUID,
+        vote_id: uuid.UUID,
+    ) -> dict:
+        voting = await self._votings.get_by_id(session, voting_id)
+        if voting is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Election not found",
+            )
+        if voting.status not in (VotingStatus.finished, VotingStatus.archived):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Merkle proof not available until election is finalized",
+            )
+
+        votes = await self._votes.list_for_voting_ordered(session, voting_id)
+
+        idx = next((i for i, v in enumerate(votes) if v.id == vote_id), None)
+        if idx is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Vote not found",
+            )
+
+        if actor.id != votes[idx].user_id and actor.id != voting.created_by:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied",
+            )
+
+        leaves = [keccak(primitive=bytes.fromhex(v.commitment_hash)) for v in votes]
+        proof = build_merkle_proof(leaves, idx)
+        computed_root = compute_root_from_proof(leaves[idx], proof, idx)
+
+        return {
+            "vote_id": vote_id,
+            "leaf": "0x" + leaves[idx].hex(),
+            "proof_path": ["0x" + s.hex() for s in proof],
+            "leaf_index": idx,
+            "total_leaves": len(leaves),
+            "computed_root": "0x" + computed_root.hex(),
+        }
+
+    async def get_voter_receipt(
+        self,
+        session: AsyncSession,
+        actor: User,
+        voting_id: uuid.UUID,
+    ) -> dict:
+        voting = await self._votings.get_by_id(session, voting_id)
+        if voting is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Election not found",
+            )
+        if voting.status not in (VotingStatus.finished, VotingStatus.archived):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Merkle proof not available until election is finalized",
+            )
+
+        vote = await self._votes.get_for_user(session, voting_id, actor.id)
+        if vote is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="You have not voted in this election",
+            )
+
+        votes = await self._votes.list_for_voting_ordered(session, voting_id)
+        idx = next((i for i, v in enumerate(votes) if v.id == vote.id), None)
+
+        leaves = [keccak(primitive=bytes.fromhex(v.commitment_hash)) for v in votes]
+        proof = build_merkle_proof(leaves, idx)
+        computed_root = compute_root_from_proof(leaves[idx], proof, idx)
+
+        return {
+            "commitment": "0x" + vote.commitment_hash,
+            "nonce": "0x" + vote.nonce,
+            "voting_id": str(voting_id),
+            "leaf_index": idx,
+            "merkle_proof": ["0x" + s.hex() for s in proof],
+            "expected_root": "0x" + computed_root.hex(),
+            "etherscan_url": (
+                f"https://sepolia.etherscan.io/tx/{voting.finalize_tx_hash}"
+                if voting.finalize_tx_hash
+                else None
+            ),
+        }
+
+
 def _fire_vote_committed(
     vote_id: uuid.UUID, voting_id: uuid.UUID, commitment_hex: str
 ) -> None:
@@ -239,6 +334,13 @@ def _fire_vote_committed(
             )
             async with AsyncSessionLocal() as bg_session:
                 await bc_repo.update_tx_hash(bg_session, vote_id, tx_hash, new_status)
+                if tx_hash is not None:
+                    await AuditRepository().create_entry(
+                        bg_session,
+                        "BLOCKCHAIN_RECORD",
+                        actor_id=None,
+                        data={"voting_id": str(voting_id), "tx_hash": tx_hash},
+                    )
                 await bg_session.commit()
         except Exception as exc:
             logger.error(

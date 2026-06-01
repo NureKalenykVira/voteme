@@ -103,6 +103,7 @@ class VotingJoinResponse(BaseModel):
     options: list[BallotOptionResponse] = Field(default_factory=list)
     is_organizer: bool = False
     user_has_voted: bool = False
+    can_vote: bool = True
     publish_tx_hash: Optional[str] = None
     finalize_tx_hash: Optional[str] = None
 
@@ -130,6 +131,21 @@ class VoterListResponse(BaseModel):
 
 class AddVoterRequest(BaseModel):
     email: EmailStr
+
+
+class AddAuditorRequest(BaseModel):
+    email: EmailStr
+
+
+class AuditorResponse(BaseModel):
+    user_id: uuid.UUID
+    email: str
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class AuditorListResponse(BaseModel):
+    items: list[AuditorResponse]
 
 
 class CsvImportInvalidRow(BaseModel):
@@ -165,3 +181,59 @@ class MyVoteResponse(BaseModel):
     commitment_hash: Optional[str] = None
     tx_status: Optional[str] = None
     tx_hash: Optional[str] = None
+
+
+class OptionResultResponse(BaseModel):
+    option_id: uuid.UUID
+    title: str
+    description: Optional[str] = None
+    photo_url: Optional[str] = None
+    votes_count: int
+    percentage: float
+
+
+class ElectionResultsResponse(BaseModel):
+    voting_id: uuid.UUID
+    title: str
+    status: str
+    total_votes: int
+    voters_invited: int
+    already_voted: int
+    participation_pct: float
+    options: list[OptionResultResponse]
+    finalize_tx_hash: Optional[str] = None
+    is_organizer: bool = False
+    start_date_time: Optional[datetime] = None
+    end_date_time: Optional[datetime] = None
+    organizer_name: Optional[str] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class MerkleProofResponse(BaseModel):
+    vote_id: uuid.UUID
+    leaf: str            # "0x" + 32-byte hex
+    proof_path: list[str]  # ["0x...", ...]
+    leaf_index: int
+    total_leaves: int
+    computed_root: str   # "0x" + 32-byte hex
+
+
+class VoterReceiptResponse(BaseModel):
+    commitment: str      # "0x" + commitment_hash
+    nonce: str           # "0x" + nonce
+    voting_id: str
+    leaf_index: int      # position of this vote's leaf in the ordered Merkle tree
+    merkle_proof: list[str]
+    expected_root: str   # "0x" + root hex
+    etherscan_url: Optional[str] = None
+
+
+class TimelineBucket(BaseModel):
+    label: str
+    votes: int
+
+
+class TimelineResponse(BaseModel):
+    buckets: list[TimelineBucket]
+    date_range: str
