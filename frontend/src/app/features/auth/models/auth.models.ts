@@ -24,6 +24,7 @@ export interface UserResponse {
   is_confirmed: boolean;
   created_at: string;
   avatar_url?: string | null;
+  is_election_auditor?: boolean;
 }
 
 export interface ConfirmEmailResponse {

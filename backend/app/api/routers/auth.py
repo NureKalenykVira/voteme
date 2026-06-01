@@ -6,6 +6,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user, get_db
 from app.models.user import User
+from app.repositories.election_auditor_repository import (
+    ElectionAuditorRepository,
+)
 from app.repositories.user_repository import UserRepository
 from app.schemas.auth import (
     BecomeOrganizerResponse,
@@ -25,6 +28,7 @@ router = APIRouter(tags=["Auth"])
 
 _auth_service = AuthService()
 _user_repo = UserRepository()
+_election_auditor_repo = ElectionAuditorRepository()
 
 
 @router.post(
@@ -90,9 +94,15 @@ async def confirm_email(
     },
 )
 async def me(
+    session: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> UserResponse:
-    return UserResponse.model_validate(current_user)
+    auditor_ids = await _election_auditor_repo.list_voting_ids_for_user(
+        session, current_user.id
+    )
+    resp = UserResponse.model_validate(current_user)
+    resp.is_election_auditor = len(auditor_ids) > 0
+    return resp
 
 
 @router.patch(
@@ -110,7 +120,12 @@ async def update_profile(
     current_user: User = Depends(get_current_user),
 ) -> UserResponse:
     user = await _auth_service.update_profile(session, current_user, payload)
-    return UserResponse.model_validate(user)
+    auditor_ids = await _election_auditor_repo.list_voting_ids_for_user(
+        session, user.id
+    )
+    resp = UserResponse.model_validate(user)
+    resp.is_election_auditor = len(auditor_ids) > 0
+    return resp
 
 
 @router.delete(

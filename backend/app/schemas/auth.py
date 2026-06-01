@@ -47,6 +47,7 @@ class UserResponse(BaseModel):
     is_deleted: bool
     created_at: datetime
     avatar_url: str | None = None
+    is_election_auditor: bool = False
 
     model_config = ConfigDict(from_attributes=True)
 
