@@ -75,6 +75,7 @@ export interface VotingJoinResponse {
   options: BallotOptionResponse[];
   is_organizer: boolean;
   user_has_voted: boolean;
+  can_vote?: boolean;
   publish_tx_hash?: string;
   finalize_tx_hash?: string;
 }
@@ -98,6 +99,19 @@ export interface VoterListResponse {
 
 export interface AddVoterRequest {
   email: string;
+}
+
+export interface AddAuditorRequest {
+  email: string;
+}
+
+export interface AuditorResponse {
+  user_id: string;
+  email: string;
+}
+
+export interface AuditorListResponse {
+  items: AuditorResponse[];
 }
 
 export interface ElectionListResponse {
@@ -140,4 +154,49 @@ export interface MyVoteResponse {
   commitment_hash?: string;
   tx_status?: 'pending' | 'confirmed' | 'failed';
   tx_hash?: string;
+}
+
+export interface OptionResultResponse {
+  option_id: string;
+  title: string;
+  description?: string;
+  photo_url?: string;
+  votes_count: number;
+  percentage: number;
+}
+
+export interface ElectionResultsResponse {
+  voting_id: string;
+  title: string;
+  status: string;
+  total_votes: number;
+  voters_invited: number;
+  already_voted: number;
+  participation_pct: number;
+  options: OptionResultResponse[];
+  finalize_tx_hash?: string;
+  is_organizer: boolean;
+  start_date_time?: string;
+  end_date_time?: string;
+  organizer_name?: string;
+}
+
+export interface TimelineBucket {
+  label: string;
+  votes: number;
+}
+
+export interface TimelineResponse {
+  buckets: TimelineBucket[];
+  date_range: string;
+}
+
+export interface VoterReceiptResponse {
+  commitment: string;
+  nonce: string;
+  voting_id: string;
+  leaf_index: number;
+  merkle_proof: string[];
+  expected_root: string;
+  etherscan_url?: string;
 }
