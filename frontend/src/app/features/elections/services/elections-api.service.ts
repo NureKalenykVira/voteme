@@ -3,7 +3,10 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import {
+  AddAuditorRequest,
   AddVoterRequest,
+  AuditorListResponse,
+  AuditorResponse,
   BallotOptionCreateRequest,
   BallotOptionResponse,
   BallotOptionUpdateRequest,
@@ -11,10 +14,13 @@ import {
   CsvImportResult,
   ElectionListResponse,
   ElectionResponse,
+  ElectionResultsResponse,
   MyVoteResponse,
+  TimelineResponse,
   VoteSubmitRequest,
   VoteSubmitResponse,
   VoterListResponse,
+  VoterReceiptResponse,
   VoterResponse,
   VotingDetailResponse,
   VotingJoinResponse,
@@ -29,7 +35,10 @@ export class ElectionsApiService {
     return this.http.post<ElectionResponse>(this.apiUrl, payload);
   }
 
-  createOption(electionId: string, payload: BallotOptionCreateRequest): Observable<BallotOptionResponse> {
+  createOption(
+    electionId: string,
+    payload: BallotOptionCreateRequest,
+  ): Observable<BallotOptionResponse> {
     return this.http.post<BallotOptionResponse>(`${this.apiUrl}/${electionId}/options`, payload);
   }
 
@@ -81,6 +90,18 @@ export class ElectionsApiService {
     return this.http.delete<void>(`${this.apiUrl}/${electionId}/voters/${voterId}`);
   }
 
+  getAuditors(electionId: string): Observable<AuditorListResponse> {
+    return this.http.get<AuditorListResponse>(`${this.apiUrl}/${electionId}/auditors`);
+  }
+
+  addAuditor(electionId: string, payload: AddAuditorRequest): Observable<AuditorResponse> {
+    return this.http.post<AuditorResponse>(`${this.apiUrl}/${electionId}/auditors`, payload);
+  }
+
+  removeAuditor(electionId: string, userId: string): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/${electionId}/auditors/${userId}`);
+  }
+
   importVotersCsv(electionId: string, file: File): Observable<CsvImportResult> {
     const formData = new FormData();
     formData.append('file', file, file.name);
@@ -97,13 +118,30 @@ export class ElectionsApiService {
   }
 
   submitVote(electionId: string, payload: VoteSubmitRequest): Observable<VoteSubmitResponse> {
-    return this.http.post<VoteSubmitResponse>(
-      `${this.apiUrl}/${electionId}/vote`,
-      payload,
-    );
+    return this.http.post<VoteSubmitResponse>(`${this.apiUrl}/${electionId}/vote`, payload);
   }
 
   getMyVote(electionId: string): Observable<MyVoteResponse> {
     return this.http.get<MyVoteResponse>(`${this.apiUrl}/${electionId}/my-vote`);
+  }
+
+  getResults(electionId: string): Observable<ElectionResultsResponse> {
+    return this.http.get<ElectionResultsResponse>(`${this.apiUrl}/${electionId}/results`);
+  }
+
+  getTimeline(electionId: string): Observable<TimelineResponse> {
+    return this.http.get<TimelineResponse>(`${this.apiUrl}/${electionId}/timeline`);
+  }
+
+  getReceipt(electionId: string): Observable<VoterReceiptResponse> {
+    return this.http.get<VoterReceiptResponse>(`${this.apiUrl}/${electionId}/receipt`);
+  }
+
+  archiveVoting(id: string): Observable<ElectionResponse> {
+    return this.http.post<ElectionResponse>(`${this.apiUrl}/${id}/archive`, {});
+  }
+
+  deleteVoting(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/${id}`);
   }
 }

@@ -274,6 +274,111 @@
     -webkit-mask: url('/assets/auth/arrow_right.svg') center / 24px 24px no-repeat;
     mask: url('/assets/auth/arrow_right.svg') center / 24px 24px no-repeat;
   }
+
+  &__auditors {
+    margin-bottom: 20px;
+  }
+
+  &__section-pill {
+    display: inline-block;
+    background: var(--vm-purple);
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 700;
+    padding: 7px 22px;
+    border-radius: var(--vm-radius-pill);
+    margin-bottom: 14px;
+  }
+
+  &__auditor-add {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  &__auditor-input {
+    flex: 1;
+    min-width: 0;
+    background: var(--vm-lime);
+    border: none;
+    outline: none;
+    border-radius: var(--vm-radius-pill);
+    padding: 9px 18px;
+    font-size: 14px;
+    font-weight: 600;
+    font-family: inherit;
+    color: var(--vm-text-dark);
+
+    &::placeholder {
+      color: rgba(28, 28, 28, 0.5);
+      font-weight: 600;
+    }
+  }
+
+  &__auditor-add-btn {
+    flex: 0 0 auto;
+    background: var(--vm-purple);
+    color: #ffffff;
+    border: none;
+    border-radius: var(--vm-radius-pill);
+    padding: 9px 24px;
+    font-size: 14px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    transition: opacity 0.15s;
+
+    &:hover:not(:disabled) {
+      opacity: 0.88;
+    }
+
+    &:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+  }
+
+  &__auditor-error {
+    color: #b42525;
+    font-size: 13px;
+    font-weight: 600;
+    margin: 0 0 12px;
+  }
+
+  &__auditor-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  &__auditor-empty {
+    color: var(--vm-text-dark);
+    font-weight: 600;
+    font-size: 14px;
+    margin: 0;
+    opacity: 0.7;
+  }
+
+  &__auditor-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    background: #ffffff;
+    border: 1px solid rgba(91, 79, 232, 0.12);
+    border-radius: 12px;
+    padding: 8px 14px;
+  }
+
+  &__auditor-email {
+    color: var(--vm-text-dark);
+    font-size: 14px;
+    font-weight: 500;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 }
 
 // ── Add voters modal ──────────────────────────────────────────────────────────
@@ -415,7 +520,9 @@
     border-radius: 50%;
     color: var(--vm-text-dark);
     cursor: pointer;
-    transition: background 0.15s, color 0.15s;
+    transition:
+      background 0.15s,
+      color 0.15s;
 
     &:hover {
       background: rgba(0, 0, 0, 0.08);
@@ -591,9 +698,15 @@
     min-width: 80px;
     background: rgba(255, 255, 255, 0.12);
 
-    &--added { background: rgba(200, 241, 53, 0.22); }
-    &--dup    { background: rgba(255, 200, 60, 0.18); }
-    &--invalid { background: rgba(255, 80, 80, 0.18); }
+    &--added {
+      background: rgba(200, 241, 53, 0.22);
+    }
+    &--dup {
+      background: rgba(255, 200, 60, 0.18);
+    }
+    &--invalid {
+      background: rgba(255, 80, 80, 0.18);
+    }
   }
 
   &__csv-stat-num {
@@ -636,7 +749,9 @@
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     font-size: 13px;
 
-    &:last-child { border-bottom: none; }
+    &:last-child {
+      border-bottom: none;
+    }
   }
 
   &__csv-invalid-rownum {
@@ -746,7 +861,9 @@
     font-weight: 700;
     font-family: inherit;
     cursor: pointer;
-    transition: background 0.15s, opacity 0.15s;
+    transition:
+      background 0.15s,
+      opacity 0.15s;
 
     &:hover {
       background: rgba(255, 255, 255, 0.12);

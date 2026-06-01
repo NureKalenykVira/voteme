@@ -5,34 +5,45 @@ import logging
 import re
 import secrets
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 _EMAIL_RE = re.compile(r'^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$')
 
 from fastapi import HTTPException, status
+from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.enums import (
     Role,
+    VotingAccessType,
     VotingEvent,
     VotingStatus,
 )
 from app.models.ballot_option import BallotOption
+from app.models.vote import Vote
 from app.models.user import User
 from app.models.voter_list import VoterList
 from app.models.voting import Voting
 from app.repositories.audit_repository import AuditRepository
 from app.repositories.ballot_option_repository import BallotOptionRepository
 from app.repositories.user_repository import UserRepository
+from app.repositories.election_auditor_repository import (
+    ElectionAuditorRepository,
+)
 from app.repositories.voter_list_repository import VoterListRepository
 from app.repositories.voting_repository import VotingRepository
+from app.repositories.vote_result_repository import VoteResultRepository
 from app.schemas.voting import (
     BallotOptionCreateRequest,
     BallotOptionUpdateRequest,
     CsvImportInvalidRow,
     CsvImportResponse,
+    ElectionResultsResponse,
+    OptionResultResponse,
+    TimelineBucket,
+    TimelineResponse,
     VotingCreateRequest,
     VotingUpdateRequest,
 )
@@ -83,6 +94,7 @@ class VotingService:
         self._users = UserRepository()
         self._voter_lists = VoterListRepository()
         self._audit = AuditRepository()
+        self._auditors = ElectionAuditorRepository()
 
     async def _get_voting_or_404(
         self, session: AsyncSession, voting_id: uuid.UUID
@@ -93,6 +105,191 @@ class VotingService:
                 status_code=status.HTTP_404_NOT_FOUND, detail="Election not found"
             )
         return voting
+
+    async def get_results(
+        self,
+        session: AsyncSession,
+        voting_id: uuid.UUID,
+        actor: Optional[User] = None,
+    ) -> ElectionResultsResponse:
+        voting = await self._get_voting_or_404(session, voting_id)
+
+        if voting.status not in (
+            VotingStatus.finished,
+            VotingStatus.archived,
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Election results are not available yet",
+            )
+
+        options = await self._options.list_for_voting(session, voting_id)
+        result_rows = await VoteResultRepository().get_for_voting(
+            session, voting_id
+        )
+        counts = {row.option_id: row.votes_count for row in result_rows}
+        total_votes = sum(counts.values())
+
+        option_results = [
+            OptionResultResponse(
+                option_id=option.id,
+                title=option.title,
+                description=option.description,
+                photo_url=option.photo_url,
+                votes_count=counts.get(option.id, 0),
+                percentage=(
+                    round(counts.get(option.id, 0) / total_votes * 100, 2)
+                    if total_votes > 0
+                    else 0.0
+                ),
+            )
+            for option in options
+        ]
+        option_results.sort(key=lambda x: x.votes_count, reverse=True)
+
+        voters_invited_result = await session.execute(
+            select(func.count(VoterList.id)).where(VoterList.voting_id == voting_id)
+        )
+        voters_invited = voters_invited_result.scalar() or 0
+
+        already_voted_result = await session.execute(
+            select(func.count(Vote.id)).where(Vote.voting_id == voting_id)
+        )
+        already_voted = already_voted_result.scalar() or 0
+
+        participation_pct = (
+            round(already_voted / voters_invited * 100, 2) if voters_invited > 0 else 0.0
+        )
+
+        is_organizer = actor is not None and actor.id == voting.created_by
+
+        organizer = await self._users.get_by_id(session, voting.created_by)
+        organizer_name: Optional[str] = None
+        if organizer is not None:
+            organizer_name = organizer.full_name or organizer.email
+
+        return ElectionResultsResponse(
+            voting_id=voting.id,
+            title=voting.title,
+            status=voting.status.value,
+            total_votes=total_votes,
+            voters_invited=voters_invited,
+            already_voted=already_voted,
+            participation_pct=participation_pct,
+            options=option_results,
+            finalize_tx_hash=voting.finalize_tx_hash,
+            is_organizer=is_organizer,
+            start_date_time=voting.start_date_time,
+            end_date_time=voting.end_date_time,
+            organizer_name=organizer_name,
+        )
+
+    async def get_timeline(
+        self,
+        session: AsyncSession,
+        voting_id: uuid.UUID,
+        actor: User,
+    ) -> TimelineResponse:
+        voting = await self._get_voting_or_404(session, voting_id)
+        self._ensure_owner_or_admin(voting, actor)
+
+        result = await session.execute(
+            select(Vote.submitted_at).where(Vote.voting_id == voting_id)
+        )
+        timestamps = [row[0] for row in result.fetchall()]
+
+        if timestamps:
+            span_start = min(timestamps)
+            span_end = max(timestamps)
+        else:
+            span_start = voting.start_date_time
+            span_end = voting.end_date_time
+
+        # Ensure span_start and span_end are timezone-aware
+        if span_start.tzinfo is None:
+            span_start = span_start.replace(tzinfo=timezone.utc)
+        if span_end.tzinfo is None:
+            span_end = span_end.replace(tzinfo=timezone.utc)
+
+        total_seconds = (span_end - span_start).total_seconds()
+
+        if total_seconds < 3600:
+            bucket_delta = timedelta(minutes=10)
+            label_format = "time"
+        elif total_seconds < 43200:
+            bucket_delta = timedelta(hours=1)
+            label_format = "time"
+        elif total_seconds < 172800:
+            bucket_delta = timedelta(hours=2)
+            label_format = "time"
+        elif total_seconds < 1209600:
+            bucket_delta = timedelta(days=1)
+            label_format = "date"
+        else:
+            bucket_delta = timedelta(weeks=1)
+            label_format = "date"
+
+        # Align span_start to the beginning of its bucket
+        if label_format == "time":
+            bucket_seconds = int(bucket_delta.total_seconds())
+            epoch = span_start.replace(hour=0, minute=0, second=0, microsecond=0)
+            elapsed = int((span_start - epoch).total_seconds())
+            aligned_start = epoch + timedelta(seconds=(elapsed // bucket_seconds) * bucket_seconds)
+        else:
+            if bucket_delta.days == 1:
+                aligned_start = span_start.replace(hour=0, minute=0, second=0, microsecond=0)
+            else:
+                # Align to start of ISO week (Monday)
+                aligned_start = span_start.replace(hour=0, minute=0, second=0, microsecond=0)
+                aligned_start = aligned_start - timedelta(days=aligned_start.weekday())
+
+        # Build bucket boundaries
+        buckets: list[TimelineBucket] = []
+        cursor = aligned_start
+        while cursor <= span_end:
+            next_cursor = cursor + bucket_delta
+            if label_format == "time":
+                label = cursor.strftime("%H:%M")
+            else:
+                # "Dec 5" style — use %-d on POSIX; use a portable approach
+                day = cursor.day
+                month_abbr = cursor.strftime("%b")
+                label = f"{month_abbr} {day}"
+
+            count = sum(
+                1 for ts in timestamps
+                if cursor <= (ts if ts.tzinfo is not None else ts.replace(tzinfo=timezone.utc)) < next_cursor
+            )
+            buckets.append(TimelineBucket(label=label, votes=count))
+            cursor = next_cursor
+
+        # Edge case: 0, 1, or all-identical votes — ensure at least 3 buckets for a meaningful chart
+        unique_timestamps = set(timestamps)
+        if len(unique_timestamps) <= 1 and len(buckets) < 3:
+            while len(buckets) < 3:
+                extra_label: str
+                if label_format == "time":
+                    extra_label = cursor.strftime("%H:%M")
+                else:
+                    day = cursor.day
+                    month_abbr = cursor.strftime("%b")
+                    extra_label = f"{month_abbr} {day}"
+                buckets.append(TimelineBucket(label=extra_label, votes=0))
+                cursor = cursor + bucket_delta
+
+        # date_range: "D MMM – D MMM, YYYY"
+        def _fmt_date(dt: datetime) -> str:
+            return f"{dt.day} {dt.strftime('%b')}"
+
+        if span_start.year == span_end.year:
+            date_range = f"{_fmt_date(span_start)} – {_fmt_date(span_end)}, {span_start.year}"
+        else:
+            date_range = (
+                f"{_fmt_date(span_start)}, {span_start.year} – "
+                f"{_fmt_date(span_end)}, {span_end.year}"
+            )
+
+        return TimelineResponse(buckets=buckets, date_range=date_range)
 
     def _ensure_owner_or_admin(self, voting: Voting, user: User) -> None:
         if user.role == Role.global_admin:
@@ -190,7 +387,11 @@ class VotingService:
                 session, status_filter, page, page_size
             )
         elif actor.role == Role.voter:
-            items, total = await self._votings.list_for_voter(
+            items, total = await self._votings.list_for_voter_union(
+                session, actor.id, status_filter, page, page_size
+            )
+        elif actor.role == Role.auditor:
+            items, total = await self._votings.list_for_voter_union(
                 session, actor.id, status_filter, page, page_size
             )
         else:
@@ -502,7 +703,7 @@ class VotingService:
         session: AsyncSession,
         code: str,
         actor: Optional[User] = None,
-    ) -> tuple[Voting, int, Optional[str], list[BallotOption], bool, bool, int, float]:
+    ) -> tuple[Voting, int, Optional[str], list[BallotOption], bool, bool, int, float, bool]:
         voting = await self._votings.get_by_invitation_code(session, code)
         if voting is None:
             raise HTTPException(
@@ -510,7 +711,15 @@ class VotingService:
                 detail="Election not found",
             )
 
-        if actor is not None and voting.created_by != actor.id:
+        is_organizer = actor is not None and voting.created_by == actor.id
+
+        is_election_auditor_for = False
+        if actor is not None and not is_organizer:
+            is_election_auditor_for = await self._auditors.is_auditor_for(
+                session, voting.id, actor.id
+            )
+
+        if actor is not None and not is_organizer and not is_election_auditor_for:
             await self._voter_lists.ensure_member(
                 session, voting.id, actor.email, actor.id
             )
@@ -525,12 +734,20 @@ class VotingService:
 
         options = list(await self._options.list_for_voting(session, voting.id))
 
-        is_organizer = actor is not None and voting.created_by == actor.id
         user_has_voted = (
             await self._votings.has_user_voted(session, voting.id, actor.id)
             if actor is not None
             else False
         )
+
+        if actor is None or is_organizer:
+            can_vote = False
+        elif voting.access_type == VotingAccessType.public:
+            can_vote = True
+        elif is_election_auditor_for:
+            can_vote = False
+        else:
+            can_vote = True
 
         voters_invited_count = await self._voter_lists.count_for_voting(session, voting.id)
         participation = (
@@ -548,6 +765,7 @@ class VotingService:
             user_has_voted,
             voters_invited_count,
             participation,
+            can_vote,
         )
 
     async def list_voters(
@@ -679,6 +897,87 @@ class VotingService:
             _email_service.send_voter_removed_email(removed_email, voting.title)
         )
 
+    async def list_auditors(
+        self,
+        session: AsyncSession,
+        actor: User,
+        voting_id: uuid.UUID,
+    ) -> list[tuple[uuid.UUID, str]]:
+        voting = await self._get_voting_or_404(session, voting_id)
+        self._ensure_owner_or_admin(voting, actor)
+
+        records = await self._auditors.list_for_voting(session, voting_id)
+        items: list[tuple[uuid.UUID, str]] = []
+        for record in records:
+            user = await self._users.get_by_id(session, record.user_id)
+            if user is not None:
+                items.append((user.id, user.email))
+        return items
+
+    async def add_auditor(
+        self,
+        session: AsyncSession,
+        actor: User,
+        voting_id: uuid.UUID,
+        email: str,
+    ) -> tuple[uuid.UUID, str]:
+        voting = await self._get_voting_or_404(session, voting_id)
+        self._ensure_owner_or_admin(voting, actor)
+
+        normalized = email.lower().strip()
+        user = await self._users.get_by_email(session, normalized)
+        if user is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="No user found with this email",
+            )
+
+        await self._auditors.add(session, voting_id, user.id)
+        await self._audit.create_entry(
+            session,
+            "AUDITOR_ADDED",
+            actor_id=actor.id,
+            data={"voting_id": str(voting_id), "email": user.email},
+        )
+        await session.commit()
+
+        event_log_url = f"{settings.frontend_url}/event-log"
+        _fire_and_forget_email(
+            _email_service.send_auditor_invitation_email(
+                user.email, voting.title, event_log_url
+            )
+        )
+        return user.id, user.email
+
+    async def remove_auditor(
+        self,
+        session: AsyncSession,
+        actor: User,
+        voting_id: uuid.UUID,
+        user_id: uuid.UUID,
+    ) -> None:
+        voting = await self._get_voting_or_404(session, voting_id)
+        self._ensure_owner_or_admin(voting, actor)
+
+        removed = await self._auditors.remove(session, voting_id, user_id)
+        if not removed:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Auditor not found for this election",
+            )
+
+        user = await self._users.get_by_id(session, user_id)
+        await self._audit.create_entry(
+            session,
+            "AUDITOR_REMOVED",
+            actor_id=actor.id,
+            data={
+                "voting_id": str(voting_id),
+                "email": user.email if user is not None else None,
+            },
+        )
+        await session.commit()
+
     async def import_voters_csv(
         self,
         session: AsyncSession,
@@ -808,6 +1107,7 @@ class VotingService:
 
         if event == VotingEvent.end_tick and voting.status == VotingStatus.finished:
             _fire_election_finalized(voting.id)
+            _tally_votes(voting.id)
 
         return voting
 
@@ -836,6 +1136,12 @@ def _fire_election_published(voting_id: uuid.UUID, title: str) -> None:
                     )
                     return
                 voting_row.publish_tx_hash = tx_hash
+                await AuditRepository().create_entry(
+                    bg_session,
+                    "BLOCKCHAIN_RECORD",
+                    actor_id=None,
+                    data={"voting_id": str(voting_id), "tx_hash": tx_hash},
+                )
                 await bg_session.commit()
         except Exception as exc:
             logger.error(
@@ -902,6 +1208,18 @@ def _fire_election_finalized(voting_id: uuid.UUID) -> None:
                     )
                     return
                 voting_row.finalize_tx_hash = tx_hash
+                await AuditRepository().create_entry(
+                    bg_session,
+                    "BLOCKCHAIN_RECORD",
+                    actor_id=None,
+                    data={"voting_id": str(voting_id), "tx_hash": tx_hash},
+                )
+                await AuditRepository().create_entry(
+                    bg_session,
+                    "ELECTION_FINALIZED",
+                    actor_id=None,
+                    data={"voting_id": str(voting_id)},
+                )
                 await bg_session.commit()
         except Exception as exc:
             logger.error(
@@ -916,5 +1234,56 @@ def _fire_election_finalized(voting_id: uuid.UUID) -> None:
     except RuntimeError:
         logger.warning(
             "No running event loop; skipping election-finalized blockchain hook for voting %s",
+            voting_id,
+        )
+
+
+def _tally_votes(voting_id: uuid.UUID) -> None:
+    """
+    Fire-and-forget background task that counts votes per ballot option and
+    upserts them into vote_results. VoteResult is a derived cache recomputable
+    from the votes table, so the upsert is idempotent on re-tally.
+
+    Reads via a fresh session to avoid coupling to the scheduler session
+    lifecycle. Never raises into the caller.
+    """
+
+    async def _runner() -> None:
+        try:
+            async with AsyncSessionLocal() as session:
+                result = await session.execute(
+                    select(Vote.option_id, func.count())
+                    .where(Vote.voting_id == voting_id)
+                    .group_by(Vote.option_id)
+                )
+                counts = {row[0]: int(row[1]) for row in result.all()}
+                await VoteResultRepository().upsert_results(
+                    session, voting_id, counts
+                )
+                await AuditRepository().create_entry(
+                    session,
+                    "RESULTS_TALLIED",
+                    actor_id=None,
+                    data={"voting_id": str(voting_id), "options_count": len(counts)},
+                )
+                await session.commit()
+                logger.info(
+                    "vote tally complete for voting_id=%s: %d options counted",
+                    voting_id,
+                    len(counts),
+                )
+        except Exception as exc:
+            logger.error(
+                "vote tally background task failed for voting_id=%s: %s",
+                voting_id,
+                exc,
+                exc_info=True,
+            )
+
+    try:
+        asyncio.get_running_loop().create_task(_runner())
+    except RuntimeError:
+        logger.warning(
+            "No running event loop; skipping vote tally for voting %s",
             voting_id,
         )

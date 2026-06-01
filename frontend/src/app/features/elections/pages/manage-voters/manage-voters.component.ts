@@ -9,7 +9,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ElectionsApiService } from '../../services/elections-api.service';
-import { CsvImportResult, VoterResponse } from '../../models/elections.models';
+import { AuditorResponse, CsvImportResult, VoterResponse } from '../../models/elections.models';
 import { QRCodeComponent } from 'angularx-qrcode';
 
 @Component({
@@ -58,6 +58,12 @@ export class ManageVotersComponent implements OnInit {
 
   readonly voterToDelete = signal<VoterResponse | null>(null);
 
+  readonly auditors = signal<AuditorResponse[]>([]);
+  readonly auditorEmail = signal('');
+  readonly auditorLoading = signal(false);
+  readonly auditorError = signal('');
+  readonly auditorToDelete = signal<AuditorResponse | null>(null);
+
   ngOnInit(): void {
     if (!this.electionId) {
       this.error.set('Missing election id');
@@ -74,6 +80,7 @@ export class ManageVotersComponent implements OnInit {
     });
 
     this.loadVoters();
+    this.loadAuditors();
   }
 
   loadVoters(): void {
@@ -209,6 +216,57 @@ export class ManageVotersComponent implements OnInit {
     if (!this.hasNext()) return;
     this.page.update((p) => p + 1);
     this.loadVoters();
+  }
+
+  loadAuditors(): void {
+    this.electionsApi.getAuditors(this.electionId).subscribe({
+      next: (resp) => this.auditors.set(resp.items),
+    });
+  }
+
+  onAuditorEmailInput(e: Event): void {
+    this.auditorEmail.set((e.target as HTMLInputElement).value);
+  }
+
+  addAuditor(): void {
+    const email = this.auditorEmail().trim();
+    if (!email || this.auditorLoading()) return;
+    this.auditorLoading.set(true);
+    this.auditorError.set('');
+    this.electionsApi.addAuditor(this.electionId, { email }).subscribe({
+      next: () => {
+        this.auditorEmail.set('');
+        this.auditorLoading.set(false);
+        this.loadAuditors();
+      },
+      error: (err) => {
+        this.auditorError.set(err?.error?.detail ?? 'Failed to add auditor');
+        this.auditorLoading.set(false);
+      },
+    });
+  }
+
+  removeAuditor(auditor: AuditorResponse): void {
+    this.auditorToDelete.set(auditor);
+  }
+
+  cancelRemoveAuditor(): void {
+    this.auditorToDelete.set(null);
+  }
+
+  confirmRemoveAuditor(): void {
+    const auditor = this.auditorToDelete();
+    if (!auditor) return;
+    this.electionsApi.removeAuditor(this.electionId, auditor.user_id).subscribe({
+      next: () => {
+        this.auditorToDelete.set(null);
+        this.loadAuditors();
+      },
+      error: (err) => {
+        this.auditorToDelete.set(null);
+        this.auditorError.set(err?.error?.detail ?? 'Failed to remove auditor');
+      },
+    });
   }
 
   backToVotings(): void {

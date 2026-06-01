@@ -21,6 +21,13 @@ export const routes: Routes = [
     loadChildren: () => import('./features/profile/profile.routes').then((m) => m.PROFILE_ROUTES),
   },
   {
+    path: 'elections/:id/results',
+    loadComponent: () =>
+      import('./features/elections/pages/election-results/election-results.component').then(
+        (m) => m.ElectionResultsComponent,
+      ),
+  },
+  {
     path: 'elections',
     canActivate: [authGuard],
     loadChildren: () =>
@@ -49,4 +56,18 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./features/my-votings/my-votings.component').then((m) => m.MyVotingsComponent),
   },
+  {
+    path: 'event-log',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/audit/pages/event-log/event-log.component').then(
+        (m) => m.EventLogComponent,
+      ),
+  },
+  {
+    path: '404',
+    loadComponent: () =>
+      import('./features/not-found/not-found.component').then((m) => m.NotFoundComponent),
+  },
+  { path: '**', redirectTo: '/404' },
 ];

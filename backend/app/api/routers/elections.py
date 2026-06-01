@@ -9,12 +9,19 @@ from app.api.deps import get_current_user, get_db, get_optional_user, require_ro
 from app.core.enums import Role, VotingStatus
 from app.models.user import User
 from app.schemas.voting import (
+    AddAuditorRequest,
     AddVoterRequest,
+    AuditorListResponse,
+    AuditorResponse,
     BallotOptionCreateRequest,
     BallotOptionResponse,
     BallotOptionUpdateRequest,
     CsvImportResponse,
+    ElectionResultsResponse,
+    MerkleProofResponse,
     MyVoteResponse,
+    TimelineResponse,
+    VoterReceiptResponse,
     VoteSubmitRequest,
     VoteSubmitResponse,
     VoterListResponse,
@@ -115,6 +122,7 @@ async def get_election_by_code(
         user_has_voted,
         voters_invited_count,
         participation,
+        can_vote,
     ) = await _voting_service.get_join_view(session, code, actor)
     return VotingJoinResponse(
         id=voting.id,
@@ -132,6 +140,7 @@ async def get_election_by_code(
         options=options,
         is_organizer=is_organizer,
         user_has_voted=user_has_voted,
+        can_vote=can_vote,
         publish_tx_hash=voting.publish_tx_hash,
         finalize_tx_hash=voting.finalize_tx_hash,
     )
@@ -173,6 +182,53 @@ async def get_election(
         finalize_tx_hash=voting.finalize_tx_hash,
         options=[BallotOptionResponse.model_validate(o) for o in options],
     )
+
+
+@router.get(
+    "/{election_id}/results",
+    response_model=ElectionResultsResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Get public results for a finished election",
+    description=(
+        "Returns per-option vote counts and percentages for an election. "
+        "Available only once the election is finished or archived; returns 409 "
+        "otherwise to preserve in-progress result privacy. Results are public."
+    ),
+    responses={
+        404: {"description": "Election not found"},
+        409: {"description": "Election results are not available yet"},
+    },
+)
+async def get_election_results(
+    election_id: uuid.UUID,
+    session: AsyncSession = Depends(get_db),
+    actor: User | None = Depends(get_optional_user),
+) -> ElectionResultsResponse:
+    return await _voting_service.get_results(session, election_id, actor)
+
+
+@router.get(
+    "/{election_id}/timeline",
+    response_model=TimelineResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Get vote timeline for organizer dashboard",
+    description=(
+        "Returns a time-bucketed histogram of vote submissions for the given election. "
+        "Bucket granularity is determined automatically by the election duration. "
+        "Only the election organizer or a global admin may access this endpoint."
+    ),
+    responses={
+        401: {"description": "Not authenticated"},
+        403: {"description": "Not the election organizer"},
+        404: {"description": "Election not found"},
+    },
+)
+async def get_election_timeline(
+    election_id: uuid.UUID,
+    session: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> TimelineResponse:
+    return await _voting_service.get_timeline(session, election_id, current_user)
 
 
 @router.patch(
@@ -387,6 +443,87 @@ async def upload_ballot_option_photo(
     return BallotOptionResponse.model_validate(option)
 
 
+@router.get(
+    "/{election_id}/auditors",
+    response_model=AuditorListResponse,
+    status_code=status.HTTP_200_OK,
+    summary="List auditors assigned to an election",
+    description=(
+        "Returns the users granted read-only audit-log access to this election. "
+        "Only the election organizer or a global admin may access this endpoint."
+    ),
+    responses={
+        401: {"description": "Missing or invalid token"},
+        403: {"description": "Caller does not own this election"},
+        404: {"description": "Election not found"},
+    },
+)
+async def list_auditors(
+    election_id: uuid.UUID,
+    session: AsyncSession = Depends(get_db),
+    current_user: User = Depends(_organizer_or_admin()),
+) -> AuditorListResponse:
+    items = await _voting_service.list_auditors(
+        session, current_user, election_id
+    )
+    return AuditorListResponse(
+        items=[
+            AuditorResponse(user_id=user_id, email=email)
+            for user_id, email in items
+        ]
+    )
+
+
+@router.post(
+    "/{election_id}/auditors",
+    response_model=AuditorResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Assign an auditor to an election by email",
+    description=(
+        "Grants the user with the given email read-only access to this election "
+        "audit log. The user must already exist. Idempotent: re-assigning an "
+        "existing auditor returns the same record. Organizer-only."
+    ),
+    responses={
+        401: {"description": "Missing or invalid token"},
+        403: {"description": "Caller does not own this election"},
+        404: {"description": "Election not found or no user with this email"},
+        422: {"description": "Validation error"},
+    },
+)
+async def add_auditor(
+    election_id: uuid.UUID,
+    payload: AddAuditorRequest,
+    session: AsyncSession = Depends(get_db),
+    current_user: User = Depends(_organizer_or_admin()),
+) -> AuditorResponse:
+    user_id, email = await _voting_service.add_auditor(
+        session, current_user, election_id, str(payload.email)
+    )
+    return AuditorResponse(user_id=user_id, email=email)
+
+
+@router.delete(
+    "/{election_id}/auditors/{user_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Remove an auditor from an election",
+    responses={
+        401: {"description": "Missing or invalid token"},
+        403: {"description": "Caller does not own this election"},
+        404: {"description": "Election not found or auditor not assigned"},
+    },
+)
+async def remove_auditor(
+    election_id: uuid.UUID,
+    user_id: uuid.UUID,
+    session: AsyncSession = Depends(get_db),
+    current_user: User = Depends(_organizer_or_admin()),
+) -> None:
+    await _voting_service.remove_auditor(
+        session, current_user, election_id, user_id
+    )
+
+
 @voter_router.get(
     "/{election_id}/voters",
     response_model=VoterListResponse,
@@ -543,6 +680,56 @@ async def submit_vote(
         tx_hash=None,
         submitted_at=vote.submitted_at,
     )
+
+
+@vote_router.get(
+    "/{election_id}/proof",
+    response_model=MerkleProofResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Get Merkle inclusion proof for a vote",
+    description=(
+        "Returns the Merkle proof path for a specific vote. Only available after election is "
+        "finalized. Voter can only access their own proof; organizer can access any."
+    ),
+    responses={
+        401: {"description": "Not authenticated"},
+        403: {"description": "Access denied"},
+        404: {"description": "Election or vote not found"},
+        409: {"description": "Election not yet finalized"},
+    },
+)
+async def get_vote_proof(
+    election_id: uuid.UUID,
+    vote_id: uuid.UUID = Query(..., description="ID of the vote to prove"),
+    session: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> MerkleProofResponse:
+    payload = await _vote_service.get_merkle_proof(session, current_user, election_id, vote_id)
+    return MerkleProofResponse(**payload)
+
+
+@vote_router.get(
+    "/{election_id}/receipt",
+    response_model=VoterReceiptResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Download voter receipt for independent verification",
+    description=(
+        "Returns a JSON receipt containing the voter's commitment, nonce, and Merkle proof. "
+        "Use with verify_receipt.py for independent verification."
+    ),
+    responses={
+        401: {"description": "Not authenticated"},
+        404: {"description": "Election not found or you have not voted"},
+        409: {"description": "Election not yet finalized"},
+    },
+)
+async def get_voter_receipt(
+    election_id: uuid.UUID,
+    session: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> VoterReceiptResponse:
+    payload = await _vote_service.get_voter_receipt(session, current_user, election_id)
+    return VoterReceiptResponse(**payload)
 
 
 @vote_router.get(

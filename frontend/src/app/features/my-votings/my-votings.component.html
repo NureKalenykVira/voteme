@@ -90,6 +90,18 @@
                   View details
                   <span class="mv-card__btn-icon mv-card__btn-icon--white" aria-hidden="true"></span>
                 </button>
+                @if (isOrganizer(election) && election.status === 'draft') {
+                  <button class="mv-card__btn mv-card__btn--danger" (click)="onDeleteClick(election)">
+                    Delete
+                    <span class="mv-card__btn-icon mv-card__btn-icon--white" aria-hidden="true"></span>
+                  </button>
+                }
+                @if (isOrganizer(election) && election.status === 'finished') {
+                  <button class="mv-card__btn mv-card__btn--outline" (click)="onArchiveClick(election)">
+                    Archive
+                    <span class="mv-card__btn-icon mv-card__btn-icon--purple" aria-hidden="true"></span>
+                  </button>
+                }
               </div>
             </div>
           </div>
@@ -103,5 +115,32 @@
     </div>
   </div>
 </div>
+
+@if (confirmAction(); as action) {
+  <div class="confirm-overlay" (click)="cancelAction()">
+    <div class="confirm-modal" (click)="$event.stopPropagation()">
+      <h2 class="confirm-modal__title">
+        @if (action.type === 'delete') { Delete voting? }
+        @else { Archive voting? }
+      </h2>
+      <p class="confirm-modal__text">
+        @if (action.type === 'delete') {
+          Delete <strong>{{ action.election.title }}</strong>? This cannot be undone.
+        } @else {
+          Archive <strong>{{ action.election.title }}</strong>? It will remain visible but cannot be modified.
+        }
+      </p>
+      <div class="confirm-modal__footer">
+        <button type="button" class="confirm-modal__cancel-btn" (click)="cancelAction()">Cancel</button>
+        <button
+          type="button"
+          class="confirm-modal__confirm-btn"
+          [class.confirm-modal__confirm-btn--danger]="action.type === 'delete'"
+          (click)="confirmActionExecute()"
+        >Confirm</button>
+      </div>
+    </div>
+  </div>
+}
 
 <ui-public-footer />

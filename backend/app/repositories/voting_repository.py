@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.enums import VotingStatus
 from app.models.ballot_option import BallotOption
+from app.models.election_auditor import ElectionAuditor
 from app.models.voter_list import VoterList
 from app.models.voting import Voting
 from app.models.voting_participation import VotingParticipation
@@ -171,6 +172,78 @@ class VotingRepository:
         )
         items = list(items_result.scalars().all())
         return items, total
+
+    async def list_for_voter_union(
+        self,
+        session: AsyncSession,
+        user_id: uuid.UUID,
+        status: Optional[VotingStatus],
+        page: int,
+        page_size: int,
+    ) -> tuple[Sequence[Voting], int]:
+        from sqlalchemy import union
+
+        voter_ids = select(VoterList.voting_id).where(VoterList.user_id == user_id)
+        auditor_ids = select(ElectionAuditor.voting_id).where(
+            ElectionAuditor.user_id == user_id
+        )
+        combined = union(voter_ids, auditor_ids).subquery()
+
+        base_filter = [
+            Voting.id.in_(select(combined.c.voting_id)),
+            Voting.is_deleted == False,  # noqa: E712
+        ]
+        if status is not None:
+            base_filter.append(Voting.status == status)
+
+        total_result = await session.execute(
+            select(func.count()).select_from(Voting).where(*base_filter)
+        )
+        total = int(total_result.scalar_one())
+
+        offset = (page - 1) * page_size
+        items_result = await session.execute(
+            select(Voting)
+            .where(*base_filter)
+            .order_by(Voting.created_at.desc())
+            .offset(offset)
+            .limit(page_size)
+        )
+        return list(items_result.scalars().all()), total
+
+    async def list_for_auditor(
+        self,
+        session: AsyncSession,
+        user_id: uuid.UUID,
+        status: Optional[VotingStatus],
+        page: int,
+        page_size: int,
+    ) -> tuple[Sequence[Voting], int]:
+        base_filter = [
+            ElectionAuditor.user_id == user_id,
+            Voting.is_deleted == False,  # noqa: E712
+        ]
+        if status is not None:
+            base_filter.append(Voting.status == status)
+
+        total_result = await session.execute(
+            select(func.count())
+            .select_from(Voting)
+            .join(ElectionAuditor, ElectionAuditor.voting_id == Voting.id)
+            .where(*base_filter)
+        )
+        total = int(total_result.scalar_one())
+
+        offset = (page - 1) * page_size
+        items_result = await session.execute(
+            select(Voting)
+            .join(ElectionAuditor, ElectionAuditor.voting_id == Voting.id)
+            .where(*base_filter)
+            .order_by(Voting.created_at.desc())
+            .offset(offset)
+            .limit(page_size)
+        )
+        return list(items_result.scalars().all()), total
 
     async def list_all(
         self,

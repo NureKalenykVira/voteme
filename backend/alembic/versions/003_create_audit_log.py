@@ -5,6 +5,8 @@ Revises: ebb0ce687a72
 Create Date: 2026-05-19 00:00:00.000000
 
 """
+import hashlib
+import json
 from typing import Sequence, Union
 
 from alembic import op
@@ -17,6 +19,19 @@ revision: str = "3a1f8c2d9e4b"
 down_revision: Union[str, Sequence[str], None] = "ebb0ce687a72"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
+
+
+def _genesis_hash() -> str:
+    payload = {
+        "action": "GENESIS",
+        "actor_id": None,
+        "data": None,
+        "previous_hash": "0" * 64,
+    }
+    serialized = json.dumps(
+        payload, sort_keys=True, ensure_ascii=False, separators=(",", ":")
+    )
+    return hashlib.sha256(serialized.encode()).hexdigest()
 
 
 def upgrade() -> None:
@@ -61,7 +76,7 @@ def upgrade() -> None:
         "NULL, "
         "NULL, "
         "'0000000000000000000000000000000000000000000000000000000000000000', "
-        "'9ed9b8091629a72699f9de6e263ae2c7a018a1d904ff0e8e86bb053ba318efd5'"
+        f"'{_genesis_hash()}'"
         ")"
     )
 

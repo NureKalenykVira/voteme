@@ -1,0 +1,162 @@
+<div class="el-page">
+  <div class="el-card">
+    <!-- Title -->
+    <div class="el-header">
+      <span class="el-title-pill">Event Log</span>
+    </div>
+
+    <!-- Stat pills -->
+    @if (data(); as d) {
+      <div class="el-stats">
+        <span class="el-stat"
+          >Total events <strong>{{ d.total }}</strong></span
+        >
+        <span class="el-stat"
+          >Votes cast <strong>{{ d.votes_cast }}</strong></span
+        >
+        <span class="el-stat"
+          >Blockchain records <strong>{{ d.blockchain_records }}</strong></span
+        >
+        <a class="el-stat el-stat--action" routerLink="/home">
+          Go home
+          <span class="el-stat__arrow"></span>
+        </a>
+      </div>
+    }
+
+    <!-- Chain integrity badge -->
+    @if (chainStatus(); as chain) {
+      <div class="el-chain-row">
+        @if (chain.broken_at === undefined) {
+          <span class="el-chain-badge el-chain-badge--ok">chain integrity: ✓ verified</span>
+        } @else {
+          <span class="el-chain-badge el-chain-badge--broken"
+            >chain integrity: ✗ broken at entry #{{ chain.broken_at }}</span
+          >
+        }
+      </div>
+    }
+
+    <!-- Filters -->
+    <div class="el-filter-bar">
+      <!-- Left: action filter dropdown -->
+      <div class="el-status-wrapper">
+        <button
+          class="el-filter-btn el-filter-btn--all"
+          [class.is-open]="showActionDropdown()"
+          (click)="toggleActionDropdown()"
+        >
+          <span class="el-filter-btn__icon el-filter-btn__icon--filter"></span>
+          {{ actionLabel() }}
+          <span class="el-filter-btn__icon el-filter-btn__icon--arrow"></span>
+        </button>
+        @if (showActionDropdown()) {
+          <div class="el-status-dropdown">
+            @for (opt of actionOptions; track opt.value) {
+              <button
+                class="el-status-option"
+                [class.el-status-option--active]="actionFilter() === opt.value"
+                (click)="selectAction(opt.value, opt.label)"
+              >
+                {{ opt.label }}
+              </button>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- Right: search -->
+      <div class="el-search-wrapper" [class.is-active]="showSearch()">
+        @if (!showSearch()) {
+          <button class="el-filter-btn el-filter-btn--search" (click)="toggleSearch()">
+            Search
+            <span class="el-filter-btn__icon el-filter-btn__icon--search"></span>
+          </button>
+        } @else {
+          <div class="el-search-box">
+            <span class="el-filter-btn__icon el-filter-btn__icon--search"></span>
+            <input
+              class="el-search-input"
+              type="text"
+              placeholder="Search by details..."
+              [value]="searchQuery()"
+              (input)="onSearchInput($event)"
+              (keyup.enter)="applyFilter()"
+              autofocus
+            />
+            <button class="el-search-close" (click)="closeSearch()">&#x2715;</button>
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Table -->
+    @if (loading()) {
+      <p class="el-empty">Loading...</p>
+    } @else if (error()) {
+      <p class="el-empty">Failed to load events.</p>
+    } @else if (data(); as d) {
+      <div class="el-table-wrap">
+        <table class="el-table">
+          <thead>
+            <tr>
+              <th>Time</th>
+              <th>Event</th>
+              <th>Voting</th>
+              <th>Details</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (entry of d.items; track entry.id) {
+              <tr>
+                <td>{{ formatDate(entry.created_at) }}</td>
+                <td>{{ formatAction(entry.action) }}</td>
+                <td>
+                  @if (entry.voting_title) {
+                    {{ entry.voting_title }}
+                    @if (entry.voting_id) {
+                      <span class="el-voting-id">({{ entry.voting_id.slice(0, 8) }})</span>
+                    }
+                  } @else {
+                    —
+                  }
+                </td>
+                <td class="el-td-details">
+                  @if (entry.tx_hash) {
+                    <span class="el-hash">{{ truncateHash(entry.tx_hash) }}</span>
+                    <a
+                      class="el-hash-link"
+                      [href]="etherscanUrl(entry.tx_hash)"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label="View on Etherscan"
+                    >
+                      <span class="el-hash-link__arrow"></span>
+                    </a>
+                  } @else {
+                    {{ entry.details ?? '—' }}
+                  }
+                </td>
+              </tr>
+            }
+            @if (d.items.length === 0) {
+              <tr>
+                <td colspan="4" class="el-empty">No events found.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      <div class="el-pagination">
+        <button class="el-page-btn" [disabled]="page() <= 1" (click)="prevPage()">Previous</button>
+        <button class="el-page-btn" [disabled]="page() >= totalPages()" (click)="nextPage()">
+          Next
+        </button>
+      </div>
+    }
+  </div>
+</div>
+
+<ui-public-footer />
