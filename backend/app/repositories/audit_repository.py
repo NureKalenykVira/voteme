@@ -3,7 +3,7 @@ import json
 import uuid
 from typing import Optional
 
-from sqlalchemy import select, text
+from sqlalchemy import String, cast, func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.audit_log import AuditLog
@@ -60,6 +60,74 @@ class AuditRepository:
         session.add(entry)
         await session.flush()
         return entry
+
+    async def list_entries(
+        self,
+        session: AsyncSession,
+        voting_ids: Optional[list[uuid.UUID]],
+        page: int,
+        page_size: int,
+        action: Optional[str] = None,
+        search: Optional[str] = None,
+    ) -> tuple[list[AuditLog], int, int, int]:
+        """
+        Returns (items, total_count, votes_cast_count, blockchain_records_count).
+
+        voting_ids=None  → no voting filter (admin path, see all entries)
+        voting_ids=[]    → organizer with no elections, return empty immediately
+        """
+        if voting_ids is not None and len(voting_ids) == 0:
+            return [], 0, 0, 0
+
+        def _base_filters(q):
+            if voting_ids is not None:
+                str_ids = [str(vid) for vid in voting_ids]
+                q = q.where(
+                    cast(AuditLog.data["voting_id"], String).in_(
+                        [f'"{s}"' for s in str_ids]
+                    )
+                )
+            if action is not None:
+                q = q.where(AuditLog.action == action)
+            if search is not None:
+                pattern = f"%{search}%"
+                q = q.where(
+                    AuditLog.action.ilike(pattern)
+                    | cast(AuditLog.data, String).ilike(pattern)
+                )
+            return q
+
+        count_q = _base_filters(select(func.count()).select_from(AuditLog))
+        total_result = await session.execute(count_q)
+        total = total_result.scalar_one()
+
+        votes_q = _base_filters(
+            select(func.count()).select_from(AuditLog).where(
+                AuditLog.action == "VOTE_SUBMITTED"
+            )
+        )
+        votes_result = await session.execute(votes_q)
+        votes_cast = votes_result.scalar_one()
+
+        # blockchain_records count: entries whose data JSONB contains a tx_hash key
+        bc_q = _base_filters(
+            select(func.count()).select_from(AuditLog).where(
+                AuditLog.data["tx_hash"].isnot(None)
+            )
+        )
+        bc_result = await session.execute(bc_q)
+        blockchain_records = bc_result.scalar_one()
+
+        items_q = (
+            _base_filters(select(AuditLog))
+            .order_by(AuditLog.created_at.desc())
+            .offset((page - 1) * page_size)
+            .limit(page_size)
+        )
+        items_result = await session.execute(items_q)
+        items = list(items_result.scalars().all())
+
+        return items, total, votes_cast, blockchain_records
 
     async def verify_chain(self, session: AsyncSession) -> Optional[int]:
         prev_entry_hash: Optional[str] = None
