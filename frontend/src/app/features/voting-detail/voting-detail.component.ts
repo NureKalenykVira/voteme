@@ -12,14 +12,17 @@ import { PublicHeaderComponent } from '../../shared/layout/public-header/public-
 import { PublicFooterComponent } from '../../shared/layout/public-footer/public-footer.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { ElectionsApiService } from '../elections/services/elections-api.service';
-import {
-  BallotOptionResponse,
-  VotingJoinResponse,
-} from '../elections/models/elections.models';
+import { BallotOptionResponse, VotingJoinResponse } from '../elections/models/elections.models';
 import { AuthStorageService } from '../../core/services/auth-storage.service';
 import { environment } from '../../../environments/environment';
 
-type ButtonState = 'cast_vote' | 'cast_vote_disabled' | 'already_voted' | 'go_to_results' | 'edit' | 'edit_disabled';
+type ButtonState =
+  | 'cast_vote'
+  | 'cast_vote_disabled'
+  | 'already_voted'
+  | 'go_to_results'
+  | 'edit'
+  | 'edit_disabled';
 
 @Component({
   selector: 'app-voting-detail',
@@ -48,10 +51,12 @@ export class VotingDetailComponent implements OnInit, OnDestroy {
   get buttonState(): ButtonState {
     const e = this.election();
     if (!e) return 'cast_vote_disabled';
-    if (e.status === 'finished' || e.status === 'archived' || e.status === 'concluded') return 'go_to_results';
+    if (e.status === 'finished' || e.status === 'archived' || e.status === 'concluded')
+      return 'go_to_results';
     if (e.is_organizer && (e.status === 'draft' || e.status === 'published')) return 'edit';
     if (e.is_organizer && e.status === 'active') return 'edit_disabled';
     if (e.is_organizer) return 'cast_vote_disabled';
+    if (e.can_vote === false) return 'cast_vote_disabled';
     if (e.user_has_voted) return 'already_voted';
     if (e.status === 'published' || e.status === 'draft') return 'cast_vote_disabled';
     return 'cast_vote';

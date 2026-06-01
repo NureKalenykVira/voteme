@@ -43,6 +43,7 @@ export class MyVotingsComponent implements OnInit {
   readonly showStatusDropdown = signal(false);
   readonly statusLabel = signal('All');
   readonly showSearch = signal(false);
+  readonly confirmAction = signal<{ type: 'delete' | 'archive'; election: ElectionResponse } | null>(null);
 
   readonly statusOptions = [
     { value: '', label: 'All' },
@@ -187,6 +188,47 @@ export class MyVotingsComponent implements OnInit {
 
   isOrganizer(election: ElectionResponse): boolean {
     return !!this.currentUserId && election.created_by === this.currentUserId;
+  }
+
+  onDeleteClick(election: ElectionResponse): void {
+    this.confirmAction.set({ type: 'delete', election });
+  }
+
+  onArchiveClick(election: ElectionResponse): void {
+    this.confirmAction.set({ type: 'archive', election });
+  }
+
+  confirmActionExecute(): void {
+    const action = this.confirmAction();
+    if (!action) return;
+    const { type, election } = action;
+    if (type === 'delete') {
+      this.electionsApi.deleteVoting(election.id).subscribe({
+        next: () => {
+          this.confirmAction.set(null);
+          this.loadElections();
+        },
+        error: (err: { error?: { detail?: string } }) => {
+          this.error.set(err?.error?.detail ?? 'Failed to delete voting');
+          this.confirmAction.set(null);
+        },
+      });
+    } else {
+      this.electionsApi.archiveVoting(election.id).subscribe({
+        next: () => {
+          this.confirmAction.set(null);
+          this.loadElections();
+        },
+        error: (err: { error?: { detail?: string } }) => {
+          this.error.set(err?.error?.detail ?? 'Failed to archive voting');
+          this.confirmAction.set(null);
+        },
+      });
+    }
+  }
+
+  cancelAction(): void {
+    this.confirmAction.set(null);
   }
 
   private getCurrentUserId(): string | null {

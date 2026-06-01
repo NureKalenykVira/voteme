@@ -46,12 +46,7 @@
           <!-- Email -->
           <div class="field-group">
             <label class="field-label">Email</label>
-            <input
-              class="profile-input"
-              type="email"
-              [value]="user()?.email ?? ''"
-              readonly
-            />
+            <input class="profile-input" type="email" [value]="user()?.email ?? ''" readonly />
           </div>
 
           <!-- Password -->
@@ -92,9 +87,14 @@
           <div class="activity-links">
             <app-activity-link-button label="View my votings" routerLink="/my-votings" />
             <app-activity-link-button
-              *ngIf="user()?.role === 'organizer' || user()?.role === 'auditor'"
+              *ngIf="
+                user()?.role === 'organizer' ||
+                user()?.role === 'global_admin' ||
+                user()?.role === 'auditor' ||
+                user()?.is_election_auditor
+              "
               label="View event log"
-              routerLink="/home"
+              routerLink="/event-log"
             />
           </div>
         </div>
@@ -111,7 +111,9 @@
               <button class="pill-btn red" (click)="onConfirmDelete()" [disabled]="deleting()">
                 {{ deleting() ? 'Deleting...' : 'Yes, delete' }}
               </button>
-              <button class="pill-btn purple" (click)="onCancelDelete()" [disabled]="deleting()">Cancel</button>
+              <button class="pill-btn purple" (click)="onCancelDelete()" [disabled]="deleting()">
+                Cancel
+              </button>
             </div>
           </ng-container>
 
@@ -129,7 +131,11 @@
       <h2 class="reset-modal-title">Reset password</h2>
       <p class="reset-modal-subtitle">We'll send a reset link to</p>
       <div class="reset-modal-email">{{ user()?.email }}</div>
-      <button class="reset-btn reset-btn--filled" (click)="onSendResetLink()" [disabled]="resetLinkSending()">
+      <button
+        class="reset-btn reset-btn--filled"
+        (click)="onSendResetLink()"
+        [disabled]="resetLinkSending()"
+      >
         {{ resetLinkSending() ? 'Sending...' : 'Send reset link' }}
       </button>
       <button class="reset-btn reset-btn--outline" (click)="onCancelReset()">Cancel</button>
