@@ -3,22 +3,22 @@
 
   @if (notFound()) {
     <div class="vote-page__card vote-page__card--narrow">
-      <p class="vote-page__not-found">Election not found.</p>
+      <p class="vote-page__not-found">{{ 'vote.notFound' | translate }}</p>
     </div>
   } @else if (election(); as e) {
     <div class="vote-page__card" [class.vote-page__card--step3]="step() === 3">
       <!-- Step indicator -->
       <div class="vote-page__steps" role="list">
         <span class="vote-page__step" [class.vote-page__step--active]="step() >= 1" role="listitem"
-          >Fill in</span
+          >{{ 'vote.stepFill' | translate }}</span
         >
         <span class="vote-page__step-arrow" aria-hidden="true">&#8594;</span>
         <span class="vote-page__step" [class.vote-page__step--active]="step() >= 2" role="listitem"
-          >Preview</span
+          >{{ 'vote.stepPreview' | translate }}</span
         >
         <span class="vote-page__step-arrow" aria-hidden="true">&#8594;</span>
         <span class="vote-page__step" [class.vote-page__step--active]="step() >= 3" role="listitem"
-          >Done</span
+          >{{ 'vote.stepDone' | translate }}</span
         >
       </div>
 
@@ -28,9 +28,9 @@
           <span class="vote-page__title-pill">{{ e.title }}</span>
           <p class="vote-page__subtitle">
             @if (step() === 2) {
-              Review your choice
+              {{ 'vote.subtitleReview' | translate }}
             } @else {
-              Cast your vote
+              {{ 'vote.subtitleCast' | translate }}
             }
           </p>
         </div>
@@ -63,7 +63,7 @@
               </span>
 
               <div class="option-card__body">
-                <span class="option-card__badge">OPTION {{ i + 1 }}</span>
+                <span class="option-card__badge">{{ 'vote.optionBadge' | translate }} {{ i + 1 }}</span>
                 <h3 class="option-card__name">{{ option.title }}</h3>
                 @if (option.description) {
                   <p class="option-card__desc">{{ option.description }}</p>
@@ -84,7 +84,7 @@
             [disabled]="!canSubmit()"
             (click)="goToPreview()"
           >
-            Preview my choice
+            {{ 'vote.previewMyChoice' | translate }}
             <span class="vote-page__primary-btn-arrow" aria-hidden="true"></span>
           </button>
         </div>
@@ -92,7 +92,7 @@
 
       <!-- Step 2 — Preview -->
       @if (step() === 2) {
-        <p class="vote-page__preview-label">You selected:</p>
+        <p class="vote-page__preview-label">{{ 'vote.youSelected' | translate }}</p>
 
         @if (selectedOption(); as opt) {
           <div class="vote-page__list">
@@ -102,7 +102,7 @@
               </span>
 
               <div class="option-card__body">
-                <span class="option-card__badge">OPTION {{ selectedOptionIndex() + 1 }}</span>
+                <span class="option-card__badge">{{ 'vote.optionBadge' | translate }} {{ selectedOptionIndex() + 1 }}</span>
                 <h3 class="option-card__name">{{ opt.title }}</h3>
                 @if (opt.description) {
                   <p class="option-card__desc">{{ opt.description }}</p>
@@ -116,7 +116,7 @@
           </div>
         }
 
-        <p class="vote-page__warning">Your vote is final and cannot be changed after submission</p>
+        <p class="vote-page__warning">{{ 'vote.voteWarning' | translate }}</p>
 
         <div class="vote-page__footer vote-page__footer--split">
           <button
@@ -129,7 +129,7 @@
               class="vote-page__primary-btn-arrow vote-page__primary-btn-arrow--left"
               aria-hidden="true"
             ></span>
-            Change my choice
+            {{ 'vote.changeChoice' | translate }}
           </button>
           <button
             type="button"
@@ -138,9 +138,9 @@
             (click)="confirmVote()"
           >
             @if (submitState() === 'submitting') {
-              Submitting...
+              {{ 'vote.submitting' | translate }}
             } @else {
-              Submit my vote
+              {{ 'vote.submitVote' | translate }}
               <span
                 class="vote-page__primary-btn-arrow vote-page__primary-btn-arrow--dark"
                 aria-hidden="true"
@@ -189,23 +189,25 @@
           alt=""
         />
         <div class="vote-page__done-content">
-          <h2 class="vote-page__done-title">Your vote has been cast!</h2>
+          <h2 class="vote-page__done-title">{{ 'vote.doneTitle' | translate }}</h2>
           <p class="vote-page__done-sub">
-            Your choice has been recorded and secured on Ethereum blockchain
+            {{ 'vote.doneSub' | translate }}
           </p>
 
           <!-- Blockchain status -->
           @if (txStatus() === 'pending') {
             <p class="vote-page__tx-status vote-page__tx-status--pending">
-              Recording on blockchain...
+              {{ 'vote.txPending' | translate }}
             </p>
           }
           @if (txStatus() === 'confirmed') {
-            <p class="vote-page__tx-status vote-page__tx-status--confirmed">Recorded on blockchain ✓</p>
+            <p class="vote-page__tx-status vote-page__tx-status--confirmed">
+              {{ 'vote.txConfirmed' | translate }}
+            </p>
           }
           @if (txStatus() === 'failed') {
             <p class="vote-page__tx-status vote-page__tx-status--failed">
-              Blockchain recording failed — your vote is still valid
+              {{ 'vote.txFailed' | translate }}
             </p>
           }
           @if (txHash(); as hash) {
@@ -215,13 +217,13 @@
               target="_blank"
               rel="noopener noreferrer"
             >
-              View on Etherscan ↗
+              {{ 'vote.viewEtherscan' | translate }}
             </a>
           }
 
           @if (commitmentHash(); as hash) {
             <div class="vote-page__done-box">
-              <p class="vote-page__done-box-label">Your confirmation ID:</p>
+              <p class="vote-page__done-box-label">{{ 'vote.confirmationId' | translate }}</p>
               <div class="vote-page__done-hash-row">
                 <input class="vote-page__done-hash-input" type="text" [value]="hash" readonly />
                 <button
@@ -256,7 +258,7 @@
                   </svg>
                 </button>
               </div>
-              <p class="vote-page__done-hint">Save this ID to verify your vote later</p>
+              <p class="vote-page__done-hint">{{ 'vote.saveHint' | translate }}</p>
             </div>
           }
         </div>
@@ -267,7 +269,7 @@
             class="vote-page__primary-btn vote-page__primary-btn--lime"
             (click)="goHome()"
           >
-            Back to my votings
+            {{ 'vote.goBack' | translate }}
             <span
               class="vote-page__primary-btn-arrow vote-page__primary-btn-arrow--dark"
               aria-hidden="true"

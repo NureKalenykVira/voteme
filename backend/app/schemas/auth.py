@@ -48,6 +48,7 @@ class UserResponse(BaseModel):
     created_at: datetime
     avatar_url: str | None = None
     is_election_auditor: bool = False
+    votes_cast_count: int = 0
 
     model_config = ConfigDict(from_attributes=True)
 

@@ -10,6 +10,7 @@ from app.repositories.election_auditor_repository import (
     ElectionAuditorRepository,
 )
 from app.repositories.user_repository import UserRepository
+from app.repositories.vote_repository import VoteRepository
 from app.schemas.auth import (
     BecomeOrganizerResponse,
     ConfirmEmailResponse,
@@ -29,6 +30,7 @@ router = APIRouter(tags=["Auth"])
 _auth_service = AuthService()
 _user_repo = UserRepository()
 _election_auditor_repo = ElectionAuditorRepository()
+_vote_repo = VoteRepository()
 
 
 @router.post(
@@ -102,6 +104,9 @@ async def me(
     )
     resp = UserResponse.model_validate(current_user)
     resp.is_election_auditor = len(auditor_ids) > 0
+    resp.votes_cast_count = await _vote_repo.count_for_user(
+        session, current_user.id
+    )
     return resp
 
 

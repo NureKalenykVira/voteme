@@ -1,3 +1,5 @@
+@use '../../../styles/mixins' as mx;
+
 .detail-page {
   max-width: 1480px;
   margin: 16px auto 0;
@@ -18,6 +20,11 @@
     align-items: center;
     gap: 20px;
     margin-bottom: 16px;
+
+    @include mx.respond-below(mx.$bp-sm) {
+      padding: 8px 16px;
+      gap: 12px;
+    }
   }
 
   &__hero-icon {
@@ -27,6 +34,11 @@
     object-fit: contain;
     filter: brightness(0) saturate(100%) invert(91%) sepia(38%) saturate(1352%) hue-rotate(18deg)
       brightness(98%) contrast(95%);
+
+    @include mx.respond-below(mx.$bp-sm) {
+      width: 52px;
+      height: 52px;
+    }
   }
 
   &__hero-title {
@@ -35,6 +47,10 @@
     font-weight: 800;
     color: #ffffff;
     margin: 0;
+
+    @include mx.respond-below(mx.$bp-sm) {
+      font-size: 22px;
+    }
   }
 
   &__status-badge {
@@ -54,6 +70,10 @@
     grid-template-columns: 1fr 1fr;
     gap: 20px;
     width: 100%;
+
+    @include mx.respond-below(mx.$bp-sm) {
+      grid-template-columns: 1fr;
+    }
   }
 
   &__left-card {
@@ -179,6 +199,10 @@
     font-weight: 700;
     color: var(--vm-purple);
     line-height: 1;
+
+    @include mx.respond-below(mx.$bp-sm) {
+      font-size: 2rem;
+    }
   }
 
   &__time-label {
@@ -324,6 +348,13 @@
   gap: 20px;
   border-radius: 28px;
   padding: 20px 24px;
+
+  @include mx.respond-below(mx.$bp-sm) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 16px;
+  }
 
   &__body {
     flex: 1;

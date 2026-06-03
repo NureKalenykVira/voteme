@@ -2,25 +2,25 @@
   <div class="el-card">
     <!-- Title -->
     <div class="el-header">
-      <span class="el-title-pill">Event Log</span>
+      <span class="el-title-pill">{{ 'eventLog.title' | translate }}</span>
     </div>
 
     <!-- Stat pills -->
     @if (data(); as d) {
       <div class="el-stats">
         <span class="el-stat"
-          >Total events <strong>{{ d.total }}</strong></span
+          >{{ 'eventLog.statTotal' | translate }} <strong>{{ d.total }}</strong></span
         >
         <span class="el-stat"
-          >Votes cast <strong>{{ d.votes_cast }}</strong></span
+          >{{ 'eventLog.statVotes' | translate }} <strong>{{ d.votes_cast }}</strong></span
         >
         <span class="el-stat"
-          >Blockchain records <strong>{{ d.blockchain_records }}</strong></span
+          >{{ 'eventLog.statBlockchain' | translate }} <strong>{{ d.blockchain_records }}</strong></span
         >
-        <a class="el-stat el-stat--action" routerLink="/home">
-          Go home
+        <button type="button" class="el-stat el-stat--action" (click)="location.back()">
+          {{ 'eventLog.goBack' | translate }}
           <span class="el-stat__arrow"></span>
-        </a>
+        </button>
       </div>
     }
 
@@ -28,10 +28,10 @@
     @if (chainStatus(); as chain) {
       <div class="el-chain-row">
         @if (chain.broken_at === undefined) {
-          <span class="el-chain-badge el-chain-badge--ok">chain integrity: ✓ verified</span>
+          <span class="el-chain-badge el-chain-badge--ok">{{ 'eventLog.chainOk' | translate }}</span>
         } @else {
           <span class="el-chain-badge el-chain-badge--broken"
-            >chain integrity: ✗ broken at entry #{{ chain.broken_at }}</span
+            >{{ 'eventLog.chainBroken' | translate }}{{ chain.broken_at }}</span
           >
         }
       </div>
@@ -47,7 +47,7 @@
           (click)="toggleActionDropdown()"
         >
           <span class="el-filter-btn__icon el-filter-btn__icon--filter"></span>
-          {{ actionLabel() }}
+          {{ actionLabel() | translate }}
           <span class="el-filter-btn__icon el-filter-btn__icon--arrow"></span>
         </button>
         @if (showActionDropdown()) {
@@ -56,9 +56,9 @@
               <button
                 class="el-status-option"
                 [class.el-status-option--active]="actionFilter() === opt.value"
-                (click)="selectAction(opt.value, opt.label)"
+                (click)="selectAction(opt.value, opt.labelKey)"
               >
-                {{ opt.label }}
+                {{ opt.labelKey | translate }}
               </button>
             }
           </div>
@@ -69,7 +69,7 @@
       <div class="el-search-wrapper" [class.is-active]="showSearch()">
         @if (!showSearch()) {
           <button class="el-filter-btn el-filter-btn--search" (click)="toggleSearch()">
-            Search
+            {{ 'eventLog.search' | translate }}
             <span class="el-filter-btn__icon el-filter-btn__icon--search"></span>
           </button>
         } @else {
@@ -78,7 +78,7 @@
             <input
               class="el-search-input"
               type="text"
-              placeholder="Search by details..."
+              [placeholder]="'eventLog.searchPlaceholder' | translate"
               [value]="searchQuery()"
               (input)="onSearchInput($event)"
               (keyup.enter)="applyFilter()"
@@ -92,24 +92,24 @@
 
     <!-- Table -->
     @if (loading()) {
-      <p class="el-empty">Loading...</p>
+      <p class="el-empty">{{ 'eventLog.loading' | translate }}</p>
     } @else if (error()) {
-      <p class="el-empty">Failed to load events.</p>
+      <p class="el-empty">{{ 'eventLog.errorLoad' | translate }}</p>
     } @else if (data(); as d) {
       <div class="el-table-wrap">
         <table class="el-table">
           <thead>
             <tr>
-              <th>Time</th>
-              <th>Event</th>
-              <th>Voting</th>
-              <th>Details</th>
+              <th>{{ 'eventLog.colTime' | translate }}</th>
+              <th>{{ 'eventLog.colEvent' | translate }}</th>
+              <th>{{ 'eventLog.colVoting' | translate }}</th>
+              <th>{{ 'eventLog.colDetails' | translate }}</th>
             </tr>
           </thead>
           <tbody>
             @for (entry of d.items; track entry.id) {
               <tr>
-                <td>{{ formatDate(entry.created_at) }}</td>
+                <td>{{ formatDate(entry.created_at, locale()) }}</td>
                 <td>{{ formatAction(entry.action) }}</td>
                 <td>
                   @if (entry.voting_title) {
@@ -134,14 +134,14 @@
                       <span class="el-hash-link__arrow"></span>
                     </a>
                   } @else {
-                    {{ entry.details ?? '—' }}
+                    {{ formatDetails(entry.details) }}
                   }
                 </td>
               </tr>
             }
             @if (d.items.length === 0) {
               <tr>
-                <td colspan="4" class="el-empty">No events found.</td>
+                <td colspan="4" class="el-empty">{{ 'eventLog.noEvents' | translate }}</td>
               </tr>
             }
           </tbody>
@@ -150,9 +150,13 @@
 
       <!-- Pagination -->
       <div class="el-pagination">
-        <button class="el-page-btn" [disabled]="page() <= 1" (click)="prevPage()">Previous</button>
+        <button class="el-page-btn" [disabled]="page() <= 1" (click)="prevPage()">
+          <img src="/assets/auth/arrow_right.svg" class="page-arrow page-arrow--left" alt="" aria-hidden="true" />
+          {{ 'eventLog.pagination.previous' | translate }}
+        </button>
         <button class="el-page-btn" [disabled]="page() >= totalPages()" (click)="nextPage()">
-          Next
+          {{ 'eventLog.pagination.next' | translate }}
+          <img src="/assets/auth/arrow_right.svg" class="page-arrow" alt="" aria-hidden="true" />
         </button>
       </div>
     }

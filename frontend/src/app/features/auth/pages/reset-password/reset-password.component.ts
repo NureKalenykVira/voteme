@@ -14,6 +14,7 @@ import {
   Validators,
 } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { AuthApiService } from '../../services/auth-api.service';
 import { ToastService } from '../../../../shared/ui/toast/toast.service';
 import { containsLetter } from '../../../../shared/validators/password.validators';
@@ -28,7 +29,7 @@ function passwordsMatch(group: AbstractControl): ValidationErrors | null {
 @Component({
   selector: 'app-reset-password',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './reset-password.component.html',
   styleUrl: './reset-password.component.scss',
@@ -39,6 +40,7 @@ export class ResetPasswordComponent implements OnInit {
   private readonly authApi = inject(AuthApiService);
   private readonly toast = inject(ToastService);
   private readonly fb = inject(FormBuilder);
+  private readonly translate = inject(TranslateService);
 
   private token = '';
   readonly saving = signal(false);
@@ -56,7 +58,7 @@ export class ResetPasswordComponent implements OnInit {
   ngOnInit(): void {
     this.token = this.route.snapshot.queryParamMap.get('token') ?? '';
     if (!this.token) {
-      this.toast.error('Invalid reset link.');
+      this.toast.error(this.translate.instant('auth.resetPassword.toastInvalidLink'));
       void this.router.navigate(['/auth/login']);
     }
   }
@@ -70,11 +72,11 @@ export class ResetPasswordComponent implements OnInit {
     const newPassword = this.form.get('newPassword')!.value as string;
     this.authApi.resetPassword(this.token, newPassword).subscribe({
       next: () => {
-        this.toast.success('Password updated! Please log in.');
+        this.toast.success(this.translate.instant('auth.resetPassword.toastSuccess'));
         void this.router.navigate(['/auth/login']);
       },
       error: () => {
-        this.toast.error('Invalid or expired reset link.');
+        this.toast.error(this.translate.instant('auth.resetPassword.toastExpired'));
         this.saving.set(false);
       },
     });

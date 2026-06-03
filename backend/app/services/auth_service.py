@@ -14,6 +14,7 @@ from app.core.security import (
 from app.models.user import User
 from app.repositories.audit_repository import AuditRepository
 from app.repositories.user_repository import UserRepository
+from app.repositories.system_settings_repository import SystemSettingsRepository
 from app.repositories.voter_list_repository import VoterListRepository
 from app.schemas.auth import LoginRequest, RegisterRequest, UpdateProfileRequest
 from app.services.email_service import EmailService
@@ -29,6 +30,16 @@ class AuthService:
         self._users = UserRepository()
         self._audit = AuditRepository()
         self._voter_lists = VoterListRepository()
+        self._settings = SystemSettingsRepository()
+
+    async def _resolve_session_timeout(self, session: AsyncSession) -> int | None:
+        raw = await self._settings.get_one(session, "session_timeout_minutes")
+        if raw is None:
+            return None
+        try:
+            return int(raw)
+        except (TypeError, ValueError):
+            return None
 
     async def register(
         self, session: AsyncSession, data: RegisterRequest
@@ -86,7 +97,10 @@ class AuthService:
                 detail="Email not confirmed",
             )
 
-        token = create_access_token(sub=str(user.id), role=user.role)
+        expire_minutes = await self._resolve_session_timeout(session)
+        token = create_access_token(
+            sub=str(user.id), role=user.role, expire_minutes=expire_minutes
+        )
         await self._audit.create_entry(session, "USER_LOGIN", actor_id=user.id)
         await self._voter_lists.link_user_by_email(session, user.email, user.id)
         await session.commit()
@@ -232,5 +246,8 @@ class AuthService:
         await session.commit()
         await session.refresh(user)
 
-        new_token = create_access_token(sub=str(user.id), role=user.role)
+        expire_minutes = await self._resolve_session_timeout(session)
+        new_token = create_access_token(
+            sub=str(user.id), role=user.role, expire_minutes=expire_minutes
+        )
         return new_token, user

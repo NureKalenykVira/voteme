@@ -1,0 +1,350 @@
+:host {
+  display: block;
+  font-family: var(--vm-font);
+}
+
+.ast-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.ast-title {
+  font-size: 28px;
+  font-weight: 900;
+  color: #1a1a1a;
+  margin: 0;
+}
+
+// ── Form ──────────────────────────────────────────────────────────────────────
+
+.ast-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.ast-section {
+  background: #fff;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.ast-section-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: #5b4fe8;
+  margin: 0 0 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+// ── Row ───────────────────────────────────────────────────────────────────────
+
+.ast-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 4px 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.ast-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a1a1a;
+  flex: 1;
+}
+
+// ── Spinner ───────────────────────────────────────────────────────────────────
+
+.ast-spinner {
+  display: inline-flex;
+  align-items: center;
+  border: 2px solid rgba(91, 79, 232, 0.3);
+  border-radius: 12px;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: #fff;
+  min-width: 100px;
+
+  &__input {
+    flex: 1;
+    min-width: 0;
+    width: 80px;
+    text-align: center;
+    font-size: 15px;
+    font-weight: 700;
+    color: #1a1a1a;
+    padding: 8px 12px;
+    font-family: var(--vm-font);
+    border: none;
+    background: transparent;
+    outline: none;
+
+    /* Прибрати native стрілки браузера */
+    -moz-appearance: textfield;
+    &::-webkit-inner-spin-button,
+    &::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+  }
+
+  &__arrows {
+    display: flex;
+    flex-direction: column;
+    border-left: 2px solid rgba(91, 79, 232, 0.15);
+  }
+
+  &__btn {
+    width: 28px;
+    height: 20px;
+    border: none;
+    background: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.12s;
+    padding: 0;
+
+    &:first-child {
+      border-bottom: 1px solid rgba(91, 79, 232, 0.15);
+    }
+
+    &:hover {
+      background: #5b4fe8;
+      .ast-spinner__icon {
+        background-color: #fff;
+      }
+    }
+  }
+
+  &__icon {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    background-color: #5b4fe8;
+    flex-shrink: 0;
+
+    &--up {
+      -webkit-mask: url('/assets/icons/arrow_down.svg') center / contain no-repeat;
+      mask: url('/assets/icons/arrow_down.svg') center / contain no-repeat;
+      transform: rotate(180deg);
+    }
+
+    &--down {
+      -webkit-mask: url('/assets/icons/arrow_down.svg') center / contain no-repeat;
+      mask: url('/assets/icons/arrow_down.svg') center / contain no-repeat;
+    }
+  }
+}
+
+// ── Toggle ────────────────────────────────────────────────────────────────────
+
+.ast-toggle {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  flex-shrink: 0;
+
+  input[type='checkbox'] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+
+  &__track {
+    width: 48px;
+    height: 26px;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.15);
+    position: relative;
+    transition: background 0.2s;
+  }
+
+  &__thumb {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+    transition:
+      transform 0.2s,
+      background 0.2s;
+  }
+}
+
+.ast-toggle input:checked ~ .ast-toggle__track {
+  background: #5b4fe8;
+}
+
+.ast-toggle input:checked ~ .ast-toggle__track .ast-toggle__thumb {
+  transform: translateX(22px);
+}
+
+// ── Backup section ────────────────────────────────────────────────────────────
+
+.ast-backup {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.ast-backup__info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ast-backup__label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a1a1a;
+
+  strong {
+    color: #5b4fe8;
+  }
+
+  &--empty {
+    opacity: 0.5;
+  }
+}
+
+.ast-backup__actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  margin-left: auto;
+}
+
+.ast-backup-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 20px;
+  border-radius: 999px;
+  border: 2px solid #5b4fe8;
+  background: #5b4fe8;
+  color: #fff;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.15s;
+
+  &:hover:not(:disabled) {
+    opacity: 0.88;
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  &--ghost {
+    background: transparent;
+    color: #5b4fe8;
+
+    &:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+  }
+}
+
+// ── Form footer ───────────────────────────────────────────────────────────────
+
+.ast-form-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 16px;
+}
+
+.ast-success {
+  font-size: 14px;
+  font-weight: 700;
+  color: #3d6b00;
+  background: rgba(200, 241, 53, 0.25);
+  padding: 8px 18px;
+  border-radius: 999px;
+}
+
+.ast-save-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 32px;
+  border-radius: 999px;
+  border: none;
+  background: #c8f135;
+  color: #1a1a1a;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: opacity 0.15s;
+
+  &:hover:not(:disabled) {
+    opacity: 0.88;
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+
+// ── Button icons (SVG mask) ────────────────────────────────────────────────────
+
+.ast-btn-icon {
+  display: inline-block;
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+
+  &--plus {
+    background-color: #ffffff;
+    -webkit-mask: url('/assets/icons/plus.svg') center / contain no-repeat;
+    mask: url('/assets/icons/plus.svg') center / contain no-repeat;
+  }
+
+  &--export {
+    background-color: #5b4fe8;
+    -webkit-mask: url('/assets/icons/export.svg') center / contain no-repeat;
+    mask: url('/assets/icons/export.svg') center / contain no-repeat;
+  }
+
+  &--arrow {
+    background-color: #1a1a1a;
+    -webkit-mask: url('/assets/auth/arrow_right.svg') center / contain no-repeat;
+    mask: url('/assets/auth/arrow_right.svg') center / contain no-repeat;
+  }
+
+  &--import {
+    background-color: #5b4fe8;
+    -webkit-mask: url('/assets/icons/upload.svg') center / contain no-repeat;
+    mask: url('/assets/icons/upload.svg') center / contain no-repeat;
+  }
+}

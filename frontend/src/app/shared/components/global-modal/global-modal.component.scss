@@ -1,0 +1,51 @@
+.gm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gm-box {
+  background: #fff;
+  border-radius: 16px;
+  overflow: hidden;
+  width: 420px;
+  max-width: 90vw;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.2);
+}
+
+.gm-header {
+  background: #5b4fe8;
+  color: #fff;
+  font-size: 1.2rem;
+  font-weight: 700;
+  padding: 20px 28px;
+}
+
+.gm-body {
+  padding: 24px 28px 28px;
+
+  p {
+    color: #444;
+    font-size: 15px;
+    margin: 0 0 20px;
+  }
+}
+
+.gm-btn {
+  background: #c8f135;
+  color: #1a1a1a;
+  font-weight: 700;
+  font-size: 15px;
+  border: none;
+  border-radius: 999px;
+  padding: 12px 32px;
+  cursor: pointer;
+
+  &:hover {
+    opacity: 0.88;
+  }
+}

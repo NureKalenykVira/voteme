@@ -1,6 +1,6 @@
 <div class="option-card" [formGroup]="formGroup">
   <div class="option-card__header">
-    <span class="option-card__badge">OPTION {{ index + 1 }}</span>
+    <span class="option-card__badge">{{ 'createVoting.option' | translate }} {{ index + 1 }}</span>
     <button
       *ngIf="canRemove"
       type="button"
@@ -14,7 +14,7 @@
 
   <div class="option-card__field">
     <label class="option-card__label" [for]="'opt-title-' + index"
-      >Title <span class="option-card__required">*</span></label
+      >{{ 'createVoting.optionTitle' | translate }} <span class="option-card__required">*</span></label
     >
     <input
       [id]="'opt-title-' + index"
@@ -24,28 +24,28 @@
       "
       type="text"
       formControlName="title"
-      placeholder="Option title"
+      [placeholder]="'createVoting.optionTitlePlaceholder' | translate"
     />
     <span
       *ngIf="formGroup.get('title')?.invalid && formGroup.get('title')?.touched"
       class="option-card__error"
-      >Title is required</span
+      >{{ 'createVoting.optionTitleRequired' | translate }}</span
     >
   </div>
 
   <div class="option-card__field">
-    <label class="option-card__label" [for]="'opt-desc-' + index">Description</label>
+    <label class="option-card__label" [for]="'opt-desc-' + index">{{ 'createVoting.optionDesc' | translate }}</label>
     <textarea
       [id]="'opt-desc-' + index"
       class="option-card__textarea"
       formControlName="description"
-      placeholder="Optional description"
+      [placeholder]="'createVoting.optionDescPlaceholder' | translate"
       rows="3"
     ></textarea>
   </div>
 
   <div class="option-card__field">
-    <label class="option-card__label">Upload photo</label>
+    <label class="option-card__label">{{ 'createVoting.optionUploadPhoto' | translate }}</label>
 
     <div
       *ngIf="!photoPreview && !existingPhotoUrl"

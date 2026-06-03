@@ -3,6 +3,7 @@ import {
 } from '@angular/core';
 import { NgIf } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
+import { TranslatePipe } from '@ngx-translate/core';
 import { AuthLayoutComponent, DecoWord } from '../../../../shared/ui/auth-layout/auth-layout.component';
 import { PrimaryButtonComponent } from '../../../../shared/ui/primary-button/primary-button.component';
 import { SecondaryButtonComponent } from '../../../../shared/ui/secondary-button/secondary-button.component';
@@ -11,7 +12,7 @@ import { AuthApiService } from '../../services/auth-api.service';
 @Component({
   selector: 'app-confirm-email',
   standalone: true,
-  imports: [NgIf, AuthLayoutComponent, PrimaryButtonComponent, SecondaryButtonComponent],
+  imports: [NgIf, AuthLayoutComponent, PrimaryButtonComponent, SecondaryButtonComponent, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './confirm-email.component.html',
   styleUrl: './confirm-email.component.scss',

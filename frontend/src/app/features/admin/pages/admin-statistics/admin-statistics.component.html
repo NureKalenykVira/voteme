@@ -1,0 +1,215 @@
+<div class="as-page">
+  <h1 class="as-title">{{ 'admin.statistics.title' | translate }}</h1>
+
+  @if (loading()) {
+    <div class="as-state">{{ 'admin.statistics.loading' | translate }}</div>
+  }
+
+  @if (stats(); as s) {
+    <!-- Stat cards -->
+    <div class="as-cards">
+      <div class="as-card">
+        <div class="as-card__label">{{ 'admin.statistics.totalUsers' | translate }}</div>
+        <div class="as-card__value">{{ s.total_users }}</div>
+      </div>
+      <div class="as-card">
+        <div class="as-card__label">{{ 'admin.statistics.totalVotings' | translate }}</div>
+        <div class="as-card__value">{{ s.total_votings }}</div>
+      </div>
+      <div class="as-card">
+        <div class="as-card__label">{{ 'admin.statistics.votesCast' | translate }}</div>
+        <div class="as-card__value">{{ s.votes_cast }}</div>
+      </div>
+      <div class="as-card">
+        <div class="as-card__label">{{ 'admin.statistics.activeVotings' | translate }}</div>
+        <div class="as-card__value">{{ s.active_votings }}</div>
+      </div>
+      <div class="as-card">
+        <div class="as-card__label">{{ 'admin.statistics.newUsersMonth' | translate }}</div>
+        <div class="as-card__value">{{ s.new_users_this_month }}</div>
+      </div>
+      <div class="as-card">
+        <div class="as-card__label">{{ 'admin.statistics.avgParticipation' | translate }}</div>
+        <div class="as-card__value">{{ s.avg_participation_pct | number: '1.0-0' }}%</div>
+      </div>
+    </div>
+
+    <!-- Blockchain stats -->
+    <h2 class="as-section-title">{{ 'admin.statistics.blockchainSection' | translate }}</h2>
+    <div class="as-cards">
+      <div class="as-card">
+        <div class="as-card__label">{{ 'admin.statistics.blockchainTotal' | translate }}</div>
+        <div class="as-card__value">{{ s.blockchain_total }}</div>
+      </div>
+      <div class="as-card">
+        <div class="as-card__label">{{ 'admin.statistics.blockchainConfirmed' | translate }}</div>
+        <div class="as-card__value">{{ s.blockchain_confirmed }}</div>
+      </div>
+      <div class="as-card">
+        <div class="as-card__label">{{ 'admin.statistics.blockchainFailed' | translate }}</div>
+        <div class="as-card__value">{{ s.blockchain_failed }}</div>
+      </div>
+      <div class="as-card">
+        <div class="as-card__label">{{ 'admin.statistics.blockchainPublished' | translate }}</div>
+        <div class="as-card__value">{{ s.blockchain_published }}</div>
+      </div>
+      <div class="as-card">
+        <div class="as-card__label">{{ 'admin.statistics.blockchainFinalized' | translate }}</div>
+        <div class="as-card__value">{{ s.blockchain_finalized }}</div>
+      </div>
+    </div>
+
+    <!-- Email stats -->
+    <h2 class="as-section-title">{{ 'admin.statistics.emailSection' | translate }}</h2>
+    <div class="as-cards">
+      <div class="as-card">
+        <div class="as-card__label">{{ 'admin.statistics.emailTotal' | translate }}</div>
+        <div class="as-card__value">{{ s.emails_total }}</div>
+      </div>
+      <div class="as-card">
+        <div class="as-card__label">{{ 'admin.statistics.emailSent' | translate }}</div>
+        <div class="as-card__value">{{ s.emails_sent }}</div>
+      </div>
+    </div>
+    <p class="as-note">{{ 'admin.statistics.emailNote' | translate }}</p>
+
+    <!-- Empty state: no chart data at all -->
+    @if (
+      !s.votings_per_day.length &&
+      !s.votes_per_day.length &&
+      !s.users_by_role.length &&
+      !s.top_votings.length
+    ) {
+      <div class="as-state">{{ 'admin.statistics.noData' | translate }}</div>
+    }
+
+    <!-- Bar chart: votings per day -->
+    @if (s.votings_per_day.length) {
+      <div class="as-chart-box">
+        <h3 class="as-chart-title">{{ 'admin.statistics.chartVotingsPerDay' | translate }}</h3>
+        <div class="as-bar-chart">
+          @for (b of s.votings_per_day; track b.date; let i = $index) {
+            <div class="as-bar-col">
+              <div
+                class="as-bar"
+                [style.height.%]="getBarHeight(b.count, maxVotingsPerDay(s))"
+                (mouseenter)="showTooltip($event, votingsTooltip(b.date, b.count))"
+                (mousemove)="moveTooltip($event)"
+                (mouseleave)="hideTooltip()"
+              ></div>
+              @if (shouldShowLabel(i, s.votings_per_day.length)) {
+                <span class="as-bar-label">{{ b.date | slice: 5 }}</span>
+              } @else {
+                <span class="as-bar-label as-bar-label--hidden" aria-hidden="true"></span>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Line chart: votes per day -->
+    @if (s.votes_per_day.length) {
+      <div class="as-chart-box">
+        <h3 class="as-chart-title">{{ 'admin.statistics.chartVotesPerDay' | translate }}</h3>
+        <svg
+          class="as-line-chart"
+          viewBox="0 0 600 120"
+          preserveAspectRatio="none"
+          aria-hidden="true"
+        >
+          <polyline
+            [attr.points]="getLinePoints(s.votes_per_day)"
+            fill="none"
+            stroke="#5b4fe8"
+            stroke-width="2.5"
+            stroke-linejoin="round"
+            stroke-linecap="round"
+          />
+          @for (b of s.votes_per_day; track b.date; let i = $index) {
+            <circle
+              [attr.cx]="getLineX(i, s.votes_per_day.length)"
+              [attr.cy]="getLineY(b.count, maxVotesPerDay(s))"
+              r="6"
+              fill="transparent"
+              stroke="transparent"
+              style="cursor: pointer"
+              (mouseenter)="showTooltip($event, votesTooltip(b.date, b.count))"
+              (mousemove)="moveTooltip($event)"
+              (mouseleave)="hideTooltip()"
+            />
+          }
+        </svg>
+        <div class="as-line-labels">
+          @for (b of s.votes_per_day; track b.date; let i = $index) {
+            @if (shouldShowLabel(i, s.votes_per_day.length)) {
+              <span class="as-line-label">{{ b.date | slice: 5 }}</span>
+            } @else {
+              <span class="as-line-label as-line-label--hidden" aria-hidden="true"></span>
+            }
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Bottom row: donut + horizontal bars -->
+    <div class="as-bottom-row">
+      <!-- Donut: users by role -->
+      @if (s.users_by_role.length) {
+        <div class="as-chart-box as-chart-box--half">
+          <h3 class="as-chart-title">{{ 'admin.statistics.chartUsersByRole' | translate }}</h3>
+          <div class="as-donut-wrap">
+            <svg viewBox="0 0 160 160" class="as-donut" aria-hidden="true">
+              @for (seg of getDonutSegments(s.users_by_role); track seg.label) {
+                <path
+                  [attr.d]="seg.path"
+                  [attr.fill]="seg.color"
+                  style="cursor: pointer"
+                  (mouseenter)="showTooltip($event, seg.label + ': ' + seg.pct + '%')"
+                  (mousemove)="moveTooltip($event)"
+                  (mouseleave)="hideTooltip()"
+                />
+              }
+            </svg>
+            <div class="as-donut-legend">
+              @for (seg of getDonutSegments(s.users_by_role); track seg.label) {
+                <span class="as-legend-item">
+                  <span class="as-dot" [style.background]="seg.color"></span>
+                  {{ seg.label }} — {{ seg.pct }}%
+                </span>
+              }
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- Horizontal bars: top votings -->
+      @if (s.top_votings.length) {
+        <div class="as-chart-box as-chart-box--half">
+          <h3 class="as-chart-title">{{ 'admin.statistics.chartTopVotings' | translate }}</h3>
+          <div class="as-hbars">
+            @for (v of s.top_votings; track v.title) {
+              <div class="as-hbar-row">
+                <span class="as-hbar-label">{{ v.title | slice: 0 : 22 }}</span>
+                <div class="as-hbar-track">
+                  <div
+                    class="as-hbar-fill"
+                    [style.width.%]="getBarWidth(v.votes_count, s.top_votings[0]?.votes_count ?? 1)"
+                    (mouseenter)="showTooltip($event, votesTooltip(v.title, v.votes_count))"
+                    (mousemove)="moveTooltip($event)"
+                    (mouseleave)="hideTooltip()"
+                  ></div>
+                </div>
+                <span class="as-hbar-val">{{ v.votes_count }}</span>
+              </div>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>
+
+@if (tooltip(); as t) {
+  <div class="as-tooltip" [style.top.px]="t.y" [style.left.px]="t.x">{{ t.text }}</div>
+}

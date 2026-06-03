@@ -8,17 +8,25 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { PublicHeaderComponent } from '../../../../shared/layout/public-header/public-header.component';
 import { PublicFooterComponent } from '../../../../shared/layout/public-footer/public-footer.component';
 import { ElectionsApiService } from '../../services/elections-api.service';
-import { ElectionResultsResponse, OptionResultResponse, TimelineBucket, TimelineResponse, VoterReceiptResponse } from '../../models/elections.models';
+import {
+  ElectionResultsResponse,
+  OptionResultResponse,
+  TimelineBucket,
+  TimelineResponse,
+  VoterReceiptResponse,
+} from '../../models/elections.models';
 import { environment } from '../../../../../environments/environment';
 import { AuthStorageService } from '../../../../core/services/auth-storage.service';
+import { ToastService } from '../../../../shared/ui/toast/toast.service';
 
 @Component({
   selector: 'app-election-results',
   standalone: true,
-  imports: [CommonModule, PublicHeaderComponent, PublicFooterComponent],
+  imports: [CommonModule, PublicHeaderComponent, PublicFooterComponent, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './election-results.component.html',
   styleUrls: ['./election-results.component.scss'],
@@ -28,13 +36,20 @@ export class ElectionResultsComponent implements OnInit, OnDestroy {
   private readonly router = inject(Router);
   private readonly electionsApi = inject(ElectionsApiService);
   readonly authStorage = inject(AuthStorageService);
+  private readonly toast = inject(ToastService);
+  private readonly translate = inject(TranslateService);
 
   readonly results = signal<ElectionResultsResponse | null>(null);
   readonly timeline = signal<TimelineResponse | null>(null);
   readonly notFound = signal(false);
   readonly copiedHash = signal(false);
   readonly expandedOptions = signal(new Set<string>());
-  readonly hoveredPieSlice = signal<{ path: string; color: string; title: string; votes: number } | null>(null);
+  readonly hoveredPieSlice = signal<{
+    path: string;
+    color: string;
+    title: string;
+    votes: number;
+  } | null>(null);
 
   readonly receipt = signal<VoterReceiptResponse | null>(null);
   readonly verifyState = signal<'idle' | 'loading' | 'done' | 'error'>('idle');
@@ -81,6 +96,7 @@ export class ElectionResultsComponent implements OnInit, OnDestroy {
     navigator.clipboard.writeText(hash).then(() => {
       this.copiedHash.set(true);
       this.copyTimeout = setTimeout(() => this.copiedHash.set(false), 2000);
+      this.toast.info(this.translate.instant('electionResults.toastCopied'));
     });
   }
 
@@ -88,6 +104,7 @@ export class ElectionResultsComponent implements OnInit, OnDestroy {
     navigator.clipboard.writeText(hash).then(() => {
       this.copiedReceiptHash.set(true);
       this.copyReceiptTimeout = setTimeout(() => this.copiedReceiptHash.set(false), 2000);
+      this.toast.info(this.translate.instant('electionResults.toastCopied'));
     });
   }
 
@@ -99,15 +116,16 @@ export class ElectionResultsComponent implements OnInit, OnDestroy {
         this.receipt.set(r);
         this.verifyState.set('done');
       },
-      error: (e: { status: number }) => {
+      error: (e: { status: number; error?: { detail?: string } }) => {
         this.verifyState.set('error');
         if (e.status === 409) {
-          this.verifyError.set('Results not yet finalized on blockchain.');
+          this.verifyError.set(this.translate.instant('electionResults.errorNotFinalized'));
         } else if (e.status === 404) {
-          this.verifyError.set('No vote found for your account.');
+          this.verifyError.set(this.translate.instant('electionResults.errorNoVote'));
         } else {
-          this.verifyError.set('Verification failed. Please try again.');
+          this.verifyError.set(this.translate.instant('electionResults.errorVerifyFailed'));
         }
+        this.toast.error(e?.error?.detail ?? this.translate.instant('electionResults.toastVerifyFailed'));
       },
     });
   }
@@ -122,6 +140,7 @@ export class ElectionResultsComponent implements OnInit, OnDestroy {
     a.download = `vote-receipt-${r.voting_id}.json`;
     a.click();
     URL.revokeObjectURL(url);
+    this.toast.success(this.translate.instant('electionResults.toastReceiptDownloaded'));
   }
 
   photoUrl(url: string | undefined): string | null {
@@ -130,7 +149,7 @@ export class ElectionResultsComponent implements OnInit, OnDestroy {
   }
 
   private denseRank(option: OptionResultResponse, options: OptionResultResponse[]): number {
-    const unique = [...new Set(options.map(o => o.votes_count))].sort((a, b) => b - a);
+    const unique = [...new Set(options.map((o) => o.votes_count))].sort((a, b) => b - a);
     return unique.indexOf(option.votes_count);
   }
 
@@ -158,14 +177,26 @@ export class ElectionResultsComponent implements OnInit, OnDestroy {
 
   badgeLabel(option: OptionResultResponse, options: OptionResultResponse[]): string {
     const rank = this.denseRank(option, options);
-    if (rank === 0) return 'WINNER 🎉';
-    if (rank === 1) return 'SECOND PLACE';
-    if (rank === 2) return 'THIRD PLACE';
-    return 'PARTICIPANT';
+    if (rank === 0) return 'electionResults.badgeWinner';
+    if (rank === 1) return 'electionResults.badgeSecond';
+    if (rank === 2) return 'electionResults.badgeThird';
+    return 'electionResults.badgeParticipant';
+  }
+
+  getStatusKey(status: string): string {
+    const map: Record<string, string> = {
+      active: 'electionResults.statusActive',
+      published: 'electionResults.statusPublished',
+      draft: 'electionResults.statusDraft',
+      finished: 'electionResults.statusFinished',
+      archived: 'electionResults.statusArchived',
+      concluded: 'electionResults.statusFinished',
+    };
+    return map[status] ?? status.toUpperCase();
   }
 
   timelineBarHeight(bucket: TimelineBucket, buckets: TimelineBucket[]): number {
-    const max = Math.max(...buckets.map(b => b.votes), 1);
+    const max = Math.max(...buckets.map((b) => b.votes), 1);
     return Math.round((bucket.votes / max) * 100);
   }
 
@@ -178,12 +209,21 @@ export class ElectionResultsComponent implements OnInit, OnDestroy {
     win.document.write(html);
     win.document.close();
     win.focus();
-    setTimeout(() => { win.print(); }, 400);
+    setTimeout(() => {
+      win.print();
+    }, 400);
+    this.toast.info(this.translate.instant('electionResults.toastReportOpened'));
   }
 
   private buildReportHtml(data: ElectionResultsResponse): string {
     const fmt = (iso: string | undefined) =>
-      iso ? new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '—';
+      iso
+        ? new Date(iso).toLocaleDateString('en-GB', {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric',
+          })
+        : '—';
 
     const duration = (): string => {
       if (!data.start_date_time || !data.end_date_time) return '';
@@ -196,7 +236,9 @@ export class ElectionResultsComponent implements OnInit, OnDestroy {
     };
 
     const sortedOptions = [...data.options].sort((a, b) => b.votes_count - a.votes_count);
-    const uniqueCounts = [...new Set(sortedOptions.map(o => o.votes_count))].sort((a, b) => b - a);
+    const uniqueCounts = [...new Set(sortedOptions.map((o) => o.votes_count))].sort(
+      (a, b) => b - a,
+    );
     const maxVotes = uniqueCounts[0] ?? 0;
 
     const rankLabel = (votes: number): string => {
@@ -207,7 +249,9 @@ export class ElectionResultsComponent implements OnInit, OnDestroy {
       return 'Participant';
     };
 
-    const optionsHtml = sortedOptions.map(o => `
+    const optionsHtml = sortedOptions
+      .map(
+        (o) => `
       <div class="option ${uniqueCounts.indexOf(o.votes_count) === 0 && maxVotes > 0 ? 'option--winner' : ''}">
         <div class="option-header">
           <span class="option-rank">${rankLabel(o.votes_count)}</span>
@@ -222,7 +266,9 @@ export class ElectionResultsComponent implements OnInit, OnDestroy {
           <span>${o.percentage.toFixed(1)}% of all votes</span>
         </div>
       </div>
-    `).join('');
+    `,
+      )
+      .join('');
 
     const winnerOption = maxVotes > 0 ? sortedOptions[0] : null;
     const conclusionHtml = winnerOption
@@ -362,7 +408,16 @@ export class ElectionResultsComponent implements OnInit, OnDestroy {
     this.router.navigate(['/my-votings']);
   }
 
-  readonly PIE_COLORS = ['#5b4fe8', '#c8f135', '#ff6b6b', '#ffd93d', '#6bcb77', '#4d96ff', '#ff9f43', '#a29bfe'];
+  readonly PIE_COLORS = [
+    '#5b4fe8',
+    '#c8f135',
+    '#ff6b6b',
+    '#ffd93d',
+    '#6bcb77',
+    '#4d96ff',
+    '#ff9f43',
+    '#a29bfe',
+  ];
 
   showPieTooltip(slice: { path: string; color: string; title: string; votes: number }): void {
     this.hoveredPieSlice.set(slice);
@@ -372,9 +427,13 @@ export class ElectionResultsComponent implements OnInit, OnDestroy {
     this.hoveredPieSlice.set(null);
   }
 
-  getPieSlices(options: OptionResultResponse[]): Array<{ path: string; color: string; title: string; votes: number }> {
+  getPieSlices(
+    options: OptionResultResponse[],
+  ): Array<{ path: string; color: string; title: string; votes: number }> {
     const total = options.reduce((sum, o) => sum + o.votes_count, 0);
-    const cx = 80, cy = 80, r = 72;
+    const cx = 80,
+      cy = 80,
+      r = 72;
     const slices: Array<{ path: string; color: string; title: string; votes: number }> = [];
 
     if (total === 0) {

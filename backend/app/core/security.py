@@ -21,10 +21,15 @@ def verify_password(plain: str, hashed: str) -> bool:
     return _pwd_context.verify(plain, hashed)
 
 
-def create_access_token(sub: str, role: Role) -> str:
-    expire = datetime.now(timezone.utc) + timedelta(
-        minutes=settings.access_token_expire_minutes
+def create_access_token(
+    sub: str, role: Role, expire_minutes: int | None = None
+) -> str:
+    minutes = (
+        expire_minutes
+        if expire_minutes is not None
+        else settings.access_token_expire_minutes
     )
+    expire = datetime.now(timezone.utc) + timedelta(minutes=minutes)
     payload = {
         "sub": sub,
         "role": role.value,

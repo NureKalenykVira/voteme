@@ -4,6 +4,7 @@ import {
   Component,
   inject,
   OnInit,
+  signal,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
@@ -16,7 +17,8 @@ import {
   Validators,
 } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { catchError, concatMap, forkJoin, from, of, switchMap, toArray } from 'rxjs';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+import { catchError, concatMap, forkJoin, from, of, switchMap, tap, toArray } from 'rxjs';
 import { VotingOptionCardComponent } from '../../../../shared/ui/voting-option-card/voting-option-card.component';
 import { TextInputComponent } from '../../../../shared/ui/text-input/text-input.component';
 import { CheckboxComponent } from '../../../../shared/ui/checkbox/checkbox.component';
@@ -33,6 +35,7 @@ import {
   VotingDetailResponse,
 } from '../../models/elections.models';
 import { environment } from '../../../../../environments/environment';
+import { ToastService } from '../../../../shared/ui/toast/toast.service';
 
 function notInPastValidator(
   dateControl: string,
@@ -59,6 +62,7 @@ function notInPastValidator(
     CheckboxComponent,
     DatePickerComponent,
     TimePickerComponent,
+    TranslatePipe,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './create-voting.component.html',
@@ -72,7 +76,10 @@ export class CreateVotingComponent implements OnInit {
   private readonly authApi = inject(AuthApiService);
   private readonly authStorage = inject(AuthStorageService);
   private readonly electionsApi = inject(ElectionsApiService);
+  private readonly toast = inject(ToastService);
+  private readonly translate = inject(TranslateService);
   readonly isEditMode = !!this.route.snapshot.paramMap.get('id');
+  readonly electionStatus = signal<string>('draft');
 
   private optionIds: (string | null)[] = [];
   private photoFiles: (File | null)[] = [];
@@ -126,6 +133,7 @@ export class CreateVotingComponent implements OnInit {
           anonymous: election.is_anonymous,
         });
 
+        this.electionStatus.set(election.status);
         this.invitationCode = election.invitation_code ?? '';
 
         this.options.clear();
@@ -152,14 +160,21 @@ export class CreateVotingComponent implements OnInit {
 
         this.cdr.markForCheck();
       },
-      error: (err) => console.error('Failed to load election for edit', err),
+      error: (err) => {
+        console.error('Failed to load election for edit', err);
+        this.toast.error(this.translate.instant('createVoting.toastFailedLoad'));
+      },
     });
   }
 
   private splitIso(iso: string): [string, string] {
     if (!iso) return ['', ''];
-    const [datePart, timePart = ''] = iso.split('T');
-    return [datePart, timePart.slice(0, 5)];
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return ['', ''];
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    const date = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    const time = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    return [date, time];
   }
 
   get options(): FormArray {
@@ -284,12 +299,22 @@ export class CreateVotingComponent implements OnInit {
               }
               return from([null]);
             }),
+            tap(() =>
+              this.toast.success(
+                action === 'published'
+                  ? this.translate.instant('createVoting.toastPublished')
+                  : this.translate.instant('createVoting.toastCreated'),
+              ),
+            ),
             switchMap(() => from(this.router.navigate(['/elections', election.id, 'invite']))),
           );
         }),
       )
       .subscribe({
-        error: (err) => console.error('Submit failed', err),
+        error: (err) => {
+          console.error('Submit failed', err);
+          this.toast.error(err?.error?.detail ?? this.translate.instant('createVoting.toastFailedSave'));
+        },
       });
   }
 
@@ -324,7 +349,7 @@ export class CreateVotingComponent implements OnInit {
           ),
         ),
         switchMap(() => {
-          if (action === 'published') {
+          if (action === 'published' && this.electionStatus() === 'draft') {
             return this.electionsApi.publish(id).pipe(
               catchError((err) => {
                 if (err.status === 409) return of(null); // already published — fine
@@ -335,10 +360,20 @@ export class CreateVotingComponent implements OnInit {
           }
           return of(null);
         }),
+        tap(() =>
+          this.toast.success(
+            action === 'published'
+              ? this.translate.instant('createVoting.toastPublished')
+              : this.translate.instant('createVoting.toastCreated'),
+          ),
+        ),
         switchMap(() => from(this.router.navigate(['/join', this.invitationCode]))),
       )
       .subscribe({
-        error: (err) => console.error('Edit submit failed', err),
+        error: (err) => {
+          console.error('Edit submit failed', err);
+          this.toast.error(err?.error?.detail ?? this.translate.instant('createVoting.toastFailedUpdate'));
+        },
       });
   }
 

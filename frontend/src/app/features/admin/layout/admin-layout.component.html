@@ -1,0 +1,72 @@
+<div class="admin-shell">
+  <!-- Mobile backdrop -->
+  @if (sidebarOpen()) {
+    <div class="admin-backdrop" (click)="closeSidebar()"></div>
+  }
+
+  <aside class="admin-sidebar" [class.admin-sidebar--open]="sidebarOpen()">
+    <div class="admin-sidebar__logo">Vote<span class="admin-sidebar__logo-me">ME</span></div>
+    <nav class="admin-sidebar__nav">
+      <a
+        routerLink="users"
+        routerLinkActive="admin-sidebar__link--active"
+        class="admin-sidebar__link"
+        (click)="closeSidebar()"
+      >
+        {{ 'admin.nav.users' | translate }} <span class="admin-sidebar__arrow"></span>
+      </a>
+      <a
+        routerLink="elections"
+        routerLinkActive="admin-sidebar__link--active"
+        class="admin-sidebar__link"
+        (click)="closeSidebar()"
+      >
+        {{ 'admin.nav.elections' | translate }} <span class="admin-sidebar__arrow"></span>
+      </a>
+      <a
+        routerLink="statistics"
+        routerLinkActive="admin-sidebar__link--active"
+        class="admin-sidebar__link"
+        (click)="closeSidebar()"
+      >
+        {{ 'admin.nav.statistics' | translate }} <span class="admin-sidebar__arrow"></span>
+      </a>
+      <a
+        routerLink="/event-log"
+        routerLinkActive="admin-sidebar__link--active"
+        class="admin-sidebar__link"
+        (click)="closeSidebar()"
+      >
+        {{ 'admin.nav.eventLog' | translate }} <span class="admin-sidebar__arrow"></span>
+      </a>
+      <a
+        routerLink="settings"
+        routerLinkActive="admin-sidebar__link--active"
+        class="admin-sidebar__link"
+        (click)="closeSidebar()"
+      >
+        {{ 'admin.nav.settings' | translate }} <span class="admin-sidebar__arrow"></span>
+      </a>
+    </nav>
+    <a routerLink="/home" class="admin-sidebar__home" (click)="closeSidebar()">
+      {{ 'admin.nav.goHome' | translate }} <span class="admin-sidebar__arrow"></span>
+    </a>
+    <button type="button" class="admin-sidebar__logout" (click)="onLogout()">
+      {{ 'admin.nav.logOut' | translate }} <span class="admin-sidebar__arrow"></span>
+    </button>
+  </aside>
+
+  <main class="admin-main">
+    <button
+      type="button"
+      class="admin-hamburger"
+      aria-label="Open navigation"
+      (click)="toggleSidebar()"
+    >
+      <span class="admin-hamburger__bar"></span>
+      <span class="admin-hamburger__bar"></span>
+      <span class="admin-hamburger__bar"></span>
+    </button>
+    <router-outlet />
+  </main>
+</div>

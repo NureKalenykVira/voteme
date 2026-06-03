@@ -2,20 +2,20 @@
   <div class="card">
 
     <ng-container *ngIf="state() === 'loading'">
-      <p class="message loading-text">Confirming your email…</p>
+      <p class="message loading-text">{{ 'auth.confirmEmail.loading' | translate }}</p>
     </ng-container>
 
     <ng-container *ngIf="state() === 'success'">
-      <h1 class="title">Email confirmed!</h1>
-      <p class="message">Your account is ready. You can now log in.</p>
-      <ui-primary-button type="button" (click)="goToLogin()">Log in</ui-primary-button>
+      <h1 class="title">{{ 'auth.confirmEmail.successTitle' | translate }}</h1>
+      <p class="message">{{ 'auth.confirmEmail.successMsg' | translate }}</p>
+      <ui-primary-button type="button" (click)="goToLogin()">{{ 'auth.confirmEmail.loginBtn' | translate }}</ui-primary-button>
     </ng-container>
 
     <ng-container *ngIf="state() === 'error'">
-      <h1 class="title">Link expired</h1>
-      <p class="message">This confirmation link is invalid or has already been used.</p>
+      <h1 class="title">{{ 'auth.confirmEmail.errorTitle' | translate }}</h1>
+      <p class="message">{{ 'auth.confirmEmail.errorMsg' | translate }}</p>
       <div class="separator"></div>
-      <ui-secondary-button type="button" (click)="goToRegister()">Back to sign up</ui-secondary-button>
+      <ui-secondary-button type="button" (click)="goToRegister()">{{ 'auth.confirmEmail.backToSignup' | translate }}</ui-secondary-button>
     </ng-container>
 
   </div>
