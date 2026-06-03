@@ -1,10 +1,12 @@
 import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
+import { TranslatePipe } from '@ngx-translate/core';
 
 export type StepCardVariant = 'white' | 'lime' | 'purple' | 'outlined-dark';
 
 @Component({
   selector: 'ui-step-card',
   standalone: true,
+  imports: [TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './step-card.component.html',
   styleUrl: './step-card.component.scss',

@@ -3,12 +3,38 @@
     <a routerLink="/home" class="header__brand">VoteME</a>
 
     <nav class="header__nav">
-      <a routerLink="/about" class="header__nav-link">About</a>
-      <a routerLink="/faq" class="header__nav-link">FAQ</a>
+      <a *ngIf="authStorage.isAuthenticated()" routerLink="/my-votings" class="header__nav-link">{{
+        'header.nav.myVotings' | translate
+      }}</a>
+      <a *ngIf="!authStorage.isAuthenticated()" routerLink="/auth/login" class="header__nav-link">{{
+        'header.nav.myVotings' | translate
+      }}</a>
+      <a routerLink="/faq" class="header__nav-link">{{ 'header.nav.faq' | translate }}</a>
+
+      <div class="header__lang" role="group" [attr.aria-label]="'header.lang.switchTo' | translate">
+        <button
+          type="button"
+          class="header__lang-btn"
+          [class.header__lang-btn--active]="language.currentLang() === 'uk'"
+          [attr.aria-pressed]="language.currentLang() === 'uk'"
+          (click)="language.setLang('uk')"
+        >
+          UA
+        </button>
+        <button
+          type="button"
+          class="header__lang-btn"
+          [class.header__lang-btn--active]="language.currentLang() === 'en'"
+          [attr.aria-pressed]="language.currentLang() === 'en'"
+          (click)="language.setLang('en')"
+        >
+          EN
+        </button>
+      </div>
     </nav>
 
     <a *ngIf="!authStorage.isAuthenticated()" routerLink="/auth/register" class="header__cta-btn">
-      Get started
+      {{ 'header.cta.getStarted' | translate }}
       <img src="/assets/auth/arrow_right.svg" class="header__cta-arrow" alt="" />
     </a>
     <a
@@ -16,7 +42,7 @@
       routerLink="/profile"
       class="header__cta-btn header__cta-btn--profile"
     >
-      My profile
+      {{ 'header.cta.myProfile' | translate }}
       <svg
         class="header__cta-arrow"
         viewBox="0 0 24 24"
@@ -32,5 +58,103 @@
         />
       </svg>
     </a>
+
+    <!-- Hamburger button: mobile only -->
+    <button
+      class="header__hamburger"
+      [class.header__hamburger--open]="menuOpen()"
+      (click)="toggleMenu()"
+      aria-label="Toggle navigation"
+      [attr.aria-expanded]="menuOpen()"
+    >
+      <span class="header__hamburger-line"></span>
+      <span class="header__hamburger-line"></span>
+      <span class="header__hamburger-line"></span>
+    </button>
+  </div>
+
+  <!-- Mobile menu -->
+  <div *ngIf="menuOpen()" class="header__mobile-menu">
+    <!-- Backdrop to close on outside click -->
+    <div class="header__mobile-backdrop" (click)="closeMenu()"></div>
+
+    <div class="header__mobile-panel">
+      <a
+        *ngIf="authStorage.isAuthenticated()"
+        routerLink="/my-votings"
+        class="header__mobile-link"
+        (click)="closeMenu()"
+        >{{ 'header.nav.myVotings' | translate }}</a
+      >
+      <a
+        *ngIf="!authStorage.isAuthenticated()"
+        routerLink="/auth/login"
+        class="header__mobile-link"
+        (click)="closeMenu()"
+        >{{ 'header.nav.myVotings' | translate }}</a
+      >
+      <a routerLink="/faq" class="header__mobile-link" (click)="closeMenu()">{{
+        'header.nav.faq' | translate
+      }}</a>
+
+      <div
+        class="header__mobile-lang"
+        role="group"
+        [attr.aria-label]="'header.lang.switchTo' | translate"
+      >
+        <button
+          type="button"
+          class="header__lang-btn"
+          [class.header__lang-btn--active]="language.currentLang() === 'uk'"
+          [attr.aria-pressed]="language.currentLang() === 'uk'"
+          (click)="language.setLang('uk')"
+        >
+          UA
+        </button>
+        <button
+          type="button"
+          class="header__lang-btn"
+          [class.header__lang-btn--active]="language.currentLang() === 'en'"
+          [attr.aria-pressed]="language.currentLang() === 'en'"
+          (click)="language.setLang('en')"
+        >
+          EN
+        </button>
+      </div>
+
+      <div class="header__mobile-cta">
+        <a
+          *ngIf="!authStorage.isAuthenticated()"
+          routerLink="/auth/register"
+          class="header__mobile-cta-btn"
+          (click)="closeMenu()"
+        >
+          {{ 'header.cta.getStarted' | translate }}
+          <img src="/assets/auth/arrow_right.svg" class="header__cta-arrow" alt="" />
+        </a>
+        <a
+          *ngIf="authStorage.isAuthenticated()"
+          routerLink="/profile"
+          class="header__mobile-cta-btn header__mobile-cta-btn--profile"
+          (click)="closeMenu()"
+        >
+          {{ 'header.cta.myProfile' | translate }}
+          <svg
+            class="header__cta-arrow"
+            viewBox="0 0 24 24"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="1.8" />
+            <path
+              d="M4 20c0-4 3.6-7 8-7s8 3 8 7"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+            />
+          </svg>
+        </a>
+      </div>
+    </div>
   </div>
 </header>

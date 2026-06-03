@@ -4,6 +4,10 @@
   background: #252529;
   padding: 32px 20px 20px;
 
+  @include mx.respond-below(mx.$bp-sm) {
+    padding: 24px 16px 16px;
+  }
+
   &__inner {
     padding: 0 48px;
 
@@ -23,8 +27,8 @@
     }
 
     @include mx.respond-below(mx.$bp-sm) {
-      grid-template-columns: 1fr;
-      gap: 32px;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
     }
   }
 
@@ -34,6 +38,11 @@
 
     &--brand {
       gap: 24px;
+
+      @include mx.respond-below(mx.$bp-sm) {
+        gap: 14px;
+        grid-column: 1 / -1;
+      }
     }
 
     &--nav,
@@ -143,6 +152,10 @@
 
   &__bottom {
     margin-top: 40px;
+
+    @include mx.respond-below(mx.$bp-sm) {
+      margin-top: 20px;
+    }
   }
 
   &__copy {

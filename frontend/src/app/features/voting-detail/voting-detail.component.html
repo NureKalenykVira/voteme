@@ -2,7 +2,7 @@
 
 <div class="detail-page">
   <div *ngIf="notFound()" class="detail-page__not-found">
-    <p>Election not found.</p>
+    <p>{{ 'votingDetail.notFound' | translate }}</p>
   </div>
 
   <ng-container *ngIf="election() as e">
@@ -10,7 +10,7 @@
     <div class="detail-page__hero">
       <img class="detail-page__hero-icon" src="assets/main/logo.svg" alt="" />
       <h1 class="detail-page__hero-title">{{ e.title }}</h1>
-      <span class="detail-page__status-badge">{{ e.status | uppercase }}</span>
+      <span class="detail-page__status-badge">{{ getStatusKey(e.status) | translate }}</span>
     </div>
 
     <!-- Content grid -->
@@ -18,44 +18,44 @@
       <!-- Left card -->
       <div class="detail-page__left-card">
         <div class="detail-page__info-row">
-          <span class="detail-page__info-label">Created by</span>
+          <span class="detail-page__info-label">{{ 'votingDetail.createdBy' | translate }}</span>
           <span class="detail-page__info-value">{{
-            e.created_by_name || 'Unknown organizer'
+            e.created_by_name || ('votingDetail.unknownOrganizer' | translate)
           }}</span>
         </div>
         <div class="detail-page__info-row">
-          <span class="detail-page__info-label">Started</span>
+          <span class="detail-page__info-label">{{ 'votingDetail.started' | translate }}</span>
           <span class="detail-page__info-value">{{ formatDate(e.start_date_time) }}</span>
         </div>
         <div class="detail-page__info-row">
-          <span class="detail-page__info-label">Voters invited</span>
+          <span class="detail-page__info-label">{{ 'votingDetail.votersInvited' | translate }}</span>
           <span class="detail-page__info-value">{{ e.voters_invited }}</span>
         </div>
         <div class="detail-page__info-row">
-          <span class="detail-page__info-label">Already voted</span>
+          <span class="detail-page__info-label">{{ 'votingDetail.alreadyVoted' | translate }}</span>
           <span class="detail-page__info-value">{{ e.already_voted }}</span>
         </div>
         <div class="detail-page__info-row">
-          <span class="detail-page__info-label">Participation</span>
+          <span class="detail-page__info-label">{{ 'votingDetail.participation' | translate }}</span>
           <span class="detail-page__info-value">{{ e.participation_pct | number: '1.0-0' }}%</span>
         </div>
       </div>
 
       <!-- Right card -->
       <div class="detail-page__right-card">
-        <span class="detail-page__time-badge">Time remaining</span>
+        <span class="detail-page__time-badge">{{ 'votingDetail.timeRemaining' | translate }}</span>
         <div class="detail-page__countdown">
           <div class="detail-page__time-unit">
             <span class="detail-page__time-value">{{ hours() }}</span>
-            <span class="detail-page__time-label">Hours</span>
+            <span class="detail-page__time-label">{{ 'votingDetail.hours' | translate }}</span>
           </div>
           <div class="detail-page__time-unit">
             <span class="detail-page__time-value">{{ minutes() }}</span>
-            <span class="detail-page__time-label">Minutes</span>
+            <span class="detail-page__time-label">{{ 'votingDetail.minutes' | translate }}</span>
           </div>
           <div class="detail-page__time-unit">
             <span class="detail-page__time-value">{{ seconds() }}</span>
-            <span class="detail-page__time-label">Seconds</span>
+            <span class="detail-page__time-label">{{ 'votingDetail.seconds' | translate }}</span>
           </div>
         </div>
         <div
@@ -70,7 +70,7 @@
             [class.detail-page__desc-toggle--inline]="!descExpanded()"
             (click)="toggleDesc()"
           >
-            {{ descExpanded() ? 'Show less' : 'Show more' }}
+            {{ (descExpanded() ? 'votingDetail.showLess' : 'votingDetail.showMore') | translate }}
           </button>
         </div>
         <div
@@ -84,7 +84,7 @@
             rel="noopener noreferrer"
             class="detail-page__tx-link"
           >
-            Published on Etherscan ↗
+            {{ 'votingDetail.publishedEtherscan' | translate }}
           </a>
           <a
             *ngIf="election()?.finalize_tx_hash as hash"
@@ -93,12 +93,12 @@
             rel="noopener noreferrer"
             class="detail-page__tx-link"
           >
-            Finalized on Etherscan ↗
+            {{ 'votingDetail.finalizedEtherscan' | translate }}
           </a>
         </div>
         <ng-container [ngSwitch]="buttonState">
           <span *ngSwitchCase="'already_voted'" class="detail-page__voted-msg">
-            You have already voted
+            {{ 'votingDetail.youHaveVoted' | translate }}
           </span>
           <button
             *ngSwitchCase="'cast_vote_disabled'"
@@ -106,7 +106,7 @@
             class="detail-page__vote-btn"
             disabled
           >
-            Cast my vote
+            {{ 'votingDetail.castMyVote' | translate }}
           </button>
           <button
             *ngSwitchCase="'edit_disabled'"
@@ -114,7 +114,7 @@
             class="detail-page__vote-btn"
             disabled
           >
-            Edit voting
+            {{ 'votingDetail.editVoting' | translate }}
           </button>
           <button
             *ngSwitchDefault
@@ -123,11 +123,11 @@
             (click)="onPrimaryAction()"
           >
             {{
-              buttonState === 'go_to_results'
-                ? 'Go to results'
+              (buttonState === 'go_to_results'
+                ? 'votingDetail.goToResults'
                 : buttonState === 'edit'
-                  ? 'Edit voting'
-                  : 'Cast my vote'
+                  ? 'votingDetail.editVoting'
+                  : 'votingDetail.castMyVote') | translate
             }}
           </button>
         </ng-container>
@@ -139,7 +139,7 @@
 <!-- Options — full width -->
 <section *ngIf="election() && options().length" class="options-section">
   <div class="options-section__inner">
-    <span class="options-section__title">Options</span>
+    <span class="options-section__title">{{ 'votingDetail.options' | translate }}</span>
 
     <div class="options-section__list">
       <div
@@ -148,7 +148,7 @@
         [ngClass]="cardClass(i)"
       >
         <div class="option-card__body">
-          <span class="option-card__badge">OPTION {{ i + 1 }}</span>
+          <span class="option-card__badge">{{ 'votingDetail.optionBadge' | translate }} {{ i + 1 }}</span>
           <h3 class="option-card__name">{{ option.title }}</h3>
           <p *ngIf="option.description" class="option-card__desc">{{ option.description }}</p>
         </div>
@@ -165,7 +165,7 @@
 
     <div class="options-section__actions">
       <span *ngIf="buttonState === 'already_voted'" class="options-section__voted-msg">
-        You have already voted
+        {{ 'votingDetail.youHaveVoted' | translate }}
       </span>
       <div *ngIf="buttonState !== 'already_voted'" class="cast-btn-wrap">
         <ui-button
@@ -179,11 +179,11 @@
           "
         >
           {{
-            buttonState === 'go_to_results'
-              ? 'Go to results'
+            (buttonState === 'go_to_results'
+              ? 'votingDetail.goToResults'
               : buttonState === 'edit' || buttonState === 'edit_disabled'
-                ? 'Edit voting'
-                : 'Cast my vote'
+                ? 'votingDetail.editVoting'
+                : 'votingDetail.castMyVote') | translate
           }}
           <img
             *ngIf="buttonState !== 'cast_vote_disabled' && buttonState !== 'edit_disabled'"

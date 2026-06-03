@@ -10,6 +10,7 @@ import {
 } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { AuthLayoutComponent } from '../../../../shared/ui/auth-layout/auth-layout.component';
 import { TextInputComponent } from '../../../../shared/ui/text-input/text-input.component';
 import { PasswordInputComponent } from '../../../../shared/ui/password-input/password-input.component';
@@ -32,6 +33,7 @@ function passwordMatchValidator(control: AbstractControl): ValidationErrors | nu
   imports: [
     CommonModule,
     ReactiveFormsModule,
+    TranslatePipe,
     AuthLayoutComponent,
     TextInputComponent,
     PasswordInputComponent,
@@ -48,6 +50,7 @@ export class RegisterComponent {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly authApi = inject(AuthApiService);
+  private readonly translate = inject(TranslateService);
 
   readonly loading = signal(false);
   readonly serverError = signal('');
@@ -87,8 +90,8 @@ export class RegisterComponent {
           this.loading.set(false);
           this.serverError.set(
             err.status === 409
-              ? 'This email is already registered.'
-              : 'Something went wrong. Please try again.',
+              ? this.translate.instant('auth.register.errorDuplicate')
+              : this.translate.instant('auth.register.errorGeneric'),
           );
         },
       });

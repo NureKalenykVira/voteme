@@ -6,9 +6,10 @@ import {
   OnInit,
   signal,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, Location } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { environment } from '../../../environments/environment';
 import { ElectionsApiService } from '../elections/services/elections-api.service';
 import {
@@ -16,6 +17,7 @@ import {
   MyVoteResponse,
   VotingDetailResponse,
 } from '../elections/models/elections.models';
+import { ToastService } from '../../shared/ui/toast/toast.service';
 
 type SubmitState = 'idle' | 'submitting' | 'submitted' | 'error';
 type Step = 1 | 2 | 3;
@@ -23,7 +25,7 @@ type Step = 1 | 2 | 3;
 @Component({
   selector: 'app-vote',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './vote.component.html',
   styleUrls: ['./vote.component.scss'],
@@ -31,7 +33,10 @@ type Step = 1 | 2 | 3;
 export class VoteComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly location = inject(Location);
   private readonly electionsApi = inject(ElectionsApiService);
+  private readonly toast = inject(ToastService);
+  private readonly translate = inject(TranslateService);
 
   readonly election = signal<VotingDetailResponse | null>(null);
   readonly options = signal<BallotOptionResponse[]>([]);
@@ -149,6 +154,7 @@ export class VoteComponent implements OnInit {
           this.txHash.set(resp.tx_hash);
         }
         this.txStatus.set(resp.tx_status);
+        this.toast.success(this.translate.instant('vote.toastSuccess'));
         this.step.set(3);
       },
       error: (err: HttpErrorResponse) => {
@@ -156,8 +162,9 @@ export class VoteComponent implements OnInit {
         const detail =
           typeof err.error === 'object' && err.error && 'detail' in err.error
             ? String((err.error as { detail: unknown }).detail)
-            : 'Failed to submit vote. Please try again.';
+            : this.translate.instant('vote.toastFailedMsg');
         this.errorMessage.set(detail);
+        this.toast.error(err?.error?.detail ?? this.translate.instant('vote.toastFailed'));
         if (err.status === 409 && detail.toLowerCase().includes('already')) {
           this.alreadyVoted.set(true);
           this.step.set(3);
@@ -167,7 +174,7 @@ export class VoteComponent implements OnInit {
   }
 
   goHome(): void {
-    this.router.navigate(['/my-votings']);
+    this.location.back();
   }
 
   etherscanUrl(hash: string): string {
@@ -178,6 +185,7 @@ export class VoteComponent implements OnInit {
     navigator.clipboard.writeText(hash).then(() => {
       this.copiedHash.set(true);
       setTimeout(() => this.copiedHash.set(false), 2000);
+      this.toast.info(this.translate.instant('vote.toastCopied'));
     });
   }
 }

@@ -5,18 +5,18 @@
     <app-hero-card tone="purple" class="card-primary">
       <div class="card-primary__content">
         <h1 class="card-primary__headline">
-          <span class="card-primary__headline--white">BLOCKCHAIN</span>
-          <span class="card-primary__headline--lime">VOTING</span>
-          <span class="card-primary__headline--white">PLATFORM</span>
-          <span class="card-primary__headline--white">FOR EVERYONE</span>
+          <span class="card-primary__headline--white">{{ 'home.hero.headline1' | translate }}</span>
+          <span class="card-primary__headline--lime">{{ 'home.hero.headline2' | translate }}</span>
+          <span class="card-primary__headline--white">{{ 'home.hero.headline3' | translate }}</span>
+          <span class="card-primary__headline--white">{{ 'home.hero.headline4' | translate }}</span>
         </h1>
 
         <div class="card-primary__actions">
           <a routerLink="/join" class="hero-btn hero-btn--primary">
-            Cast a vote
+            {{ 'home.hero.castVote' | translate }}
           </a>
           <a routerLink="/elections/create" class="hero-btn hero-btn--outline-light">
-            Create Voting
+            {{ 'home.hero.createVoting' | translate }}
           </a>
         </div>
       </div>
@@ -25,14 +25,14 @@
     <!-- Card 2: info — col 2, row 1 -->
     <app-hero-card tone="purple" class="card-info">
       <p class="card-info__text">
-        Transparent and secure elections powered by Ethereum blockchain
+        {{ 'home.hero.tagline' | translate }}
       </p>
     </app-hero-card>
 
     <!-- Card 3: visual — col 3, spans 2 rows -->
     <app-hero-card tone="purple" class="card-visual">
-      <div class="card-visual__placeholder">
-        <span class="card-visual__icon">&#128249;</span>
+      <div class="card-visual__photo">
+        <img src="/assets/main/business-people-handshake.jpg" alt="" class="card-visual__img" />
       </div>
     </app-hero-card>
 
@@ -41,7 +41,7 @@
       <div class="card-badge__content">
         <img src="/assets/main/logo.svg" alt="" class="card-badge__icon" />
         <p class="card-badge__text">
-          Real-time results open for public verification!
+          {{ 'home.hero.badge' | translate }}
         </p>
       </div>
     </app-hero-card>

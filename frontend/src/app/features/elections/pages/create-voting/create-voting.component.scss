@@ -301,6 +301,16 @@
 
     &__body {
       grid-template-columns: 1fr;
+      gap: 20px;
+    }
+
+    &__datetime {
+      flex-direction: column;
+    }
+
+    &__add-btn {
+      align-self: stretch;
+      justify-content: center;
     }
 
     &__actions {

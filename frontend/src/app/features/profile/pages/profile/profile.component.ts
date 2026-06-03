@@ -6,11 +6,12 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, Location } from '@angular/common';
 import { environment } from '../../../../../environments/environment';
 import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
+import { TranslateService, TranslatePipe } from '@ngx-translate/core';
 import { AuthApiService } from '../../../auth/services/auth-api.service';
 import { AuthStorageService } from '../../../../core/services/auth-storage.service';
 import { ToastService } from '../../../../shared/ui/toast/toast.service';
@@ -29,6 +30,7 @@ type ProfileState = 'loading' | 'ready' | 'error';
   imports: [
     CommonModule,
     ReactiveFormsModule,
+    TranslatePipe,
     ProfileAvatarComponent,
     ProfileHeaderBadgeComponent,
     RoleBadgeComponent,
@@ -43,8 +45,10 @@ export class ProfileComponent implements OnInit {
   private readonly authApi = inject(AuthApiService);
   private readonly storage = inject(AuthStorageService);
   private readonly router = inject(Router);
+  private readonly location = inject(Location);
   private readonly fb = inject(FormBuilder);
   private readonly toastService = inject(ToastService);
+  private readonly translate = inject(TranslateService);
 
   readonly state = signal<ProfileState>('loading');
   readonly user = signal<UserResponse | null>(null);
@@ -77,6 +81,10 @@ export class ProfileComponent implements OnInit {
     this.state.set('loading');
     this.authApi.me().subscribe({
       next: (resp: UserResponse) => {
+        if (resp.role !== this.storage.getRole()) {
+          this.onLogout();
+          return;
+        }
         this.user.set(resp);
         this.fullNameForm.patchValue({ fullName: resp.full_name ?? '' });
         this.state.set('ready');
@@ -97,9 +105,10 @@ export class ProfileComponent implements OnInit {
     this.authApi.uploadAvatar(file).subscribe({
       next: (resp) => {
         this.user.set(resp);
+        this.toastService.success(this.translate.instant('profile.toast.avatarUpdated'));
       },
       error: () => {
-        this.toastService.error('Failed to upload photo. Please try again.');
+        this.toastService.error(this.translate.instant('profile.toast.avatarFailed'));
       },
     });
   }
@@ -109,17 +118,20 @@ export class ProfileComponent implements OnInit {
   }
 
   onSaveChanges(): void {
-    if (this.fullNameForm.invalid) { this.fullNameForm.markAllAsTouched(); return; }
+    if (this.fullNameForm.invalid) {
+      this.fullNameForm.markAllAsTouched();
+      return;
+    }
     this.loading.set(true);
     const fullName = this.fullNameControl.value?.trim() || null;
     this.authApi.updateProfile({ full_name: fullName }).subscribe({
       next: (resp) => {
         this.user.set(resp);
-        this.toastService.success('Saved!');
+        this.toastService.success(this.translate.instant('profile.toast.saved'));
         this.loading.set(false);
       },
       error: () => {
-        this.toastService.error('Error saving. Try again.');
+        this.toastService.error(this.translate.instant('profile.toast.saveFailed'));
         this.loading.set(false);
       },
     });
@@ -131,7 +143,7 @@ export class ProfileComponent implements OnInit {
   }
 
   onGoHome(): void {
-    this.router.navigate(['/home']);
+    this.location.back();
   }
 
   onForgotPassword(): void {
@@ -148,12 +160,12 @@ export class ProfileComponent implements OnInit {
     this.resetLinkSending.set(true);
     this.authApi.forgotPassword(email).subscribe({
       next: () => {
-        this.toastService.success('Reset link sent! Check your inbox.');
+        this.toastService.success(this.translate.instant('profile.toast.resetSent'));
         this.showResetModal.set(false);
         this.resetLinkSending.set(false);
       },
       error: () => {
-        this.toastService.error('Failed to send reset link.');
+        this.toastService.error(this.translate.instant('profile.toast.resetFailed'));
         this.resetLinkSending.set(false);
       },
     });
@@ -173,7 +185,7 @@ export class ProfileComponent implements OnInit {
       error: () => {
         this.deleting.set(false);
         this.confirmDelete.set(false);
-        this.toastService.error('Failed to delete account. Try again.');
+        this.toastService.error(this.translate.instant('profile.toast.deleteFailed'));
       },
     });
   }

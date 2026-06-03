@@ -1,3 +1,15 @@
+@use '../../../../styles/mixins' as mx;
+
+:host {
+  display: block;
+  z-index: 100;
+
+  @include mx.respond-below(mx.$bp-md) {
+    position: sticky;
+    top: 0;
+  }
+}
+
 .header {
   padding: 12px 20px 0;
   background: transparent;
@@ -75,5 +87,228 @@
     height: 20px;
     flex-shrink: 0;
     filter: brightness(0);
+  }
+
+  // ── Language switcher ─────────────────────────────────────────────────────
+
+  &__lang {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    padding: 3px;
+    background: rgba(0, 0, 0, 0.06);
+    border-radius: var(--vm-radius-pill);
+    flex-shrink: 0;
+  }
+
+  &__lang-btn {
+    appearance: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px 10px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1;
+    color: var(--vm-text-dark);
+    background: transparent;
+    border-radius: var(--vm-radius-pill);
+    transition:
+      background 0.15s,
+      opacity 0.15s;
+
+    &:hover {
+      opacity: 0.7;
+    }
+
+    &--active {
+      background: var(--vm-text-dark);
+      color: var(--vm-lime);
+      opacity: 1;
+    }
+  }
+
+  &__mobile-lang {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    padding: 3px;
+    margin: 12px 0 4px;
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: var(--vm-radius-pill);
+
+    .header__lang-btn {
+      color: var(--vm-text-white);
+
+      &--active {
+        background: var(--vm-lime);
+        color: var(--vm-text-dark);
+      }
+    }
+  }
+
+  // ── Hamburger button ──────────────────────────────────────────────────────
+
+  &__hamburger {
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  &__hamburger-line {
+    display: block;
+    width: 24px;
+    height: 2px;
+    background: var(--vm-text-dark);
+    border-radius: 2px;
+    transition:
+      transform 0.2s ease,
+      opacity 0.2s ease;
+    transform-origin: center;
+  }
+
+  &__hamburger--open {
+    .header__hamburger-line:nth-child(1) {
+      transform: translateY(7px) rotate(45deg);
+    }
+
+    .header__hamburger-line:nth-child(2) {
+      opacity: 0;
+      transform: scaleX(0);
+    }
+
+    .header__hamburger-line:nth-child(3) {
+      transform: translateY(-7px) rotate(-45deg);
+    }
+  }
+
+  // ── Mobile menu ───────────────────────────────────────────────────────────
+
+  &__mobile-menu {
+    position: relative;
+    margin-top: -21px;
+  }
+
+  &__mobile-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 90;
+  }
+
+  &__mobile-panel {
+    position: relative;
+    z-index: 91;
+    background: var(--vm-purple);
+    border-radius: 0 0 20px 20px;
+    padding: 28px 24px 16px;
+    animation: header-slide-down 0.25s ease;
+  }
+
+  @keyframes header-slide-down {
+    from {
+      opacity: 0;
+      transform: translateY(-16px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  &__mobile-link {
+    display: block;
+    color: var(--vm-text-white);
+    text-decoration: none;
+    font-size: 16px;
+    font-weight: 700;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+
+    &:last-of-type {
+      border-bottom: none;
+    }
+
+    &:hover {
+      opacity: 0.8;
+    }
+  }
+
+  &__mobile-cta {
+    padding-top: 16px;
+  }
+
+  &__mobile-cta-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 20px;
+    font-size: 15px;
+    font-weight: 700;
+    font-family: inherit;
+    color: var(--vm-text-dark);
+    background: var(--vm-lime);
+    border: none;
+    border-radius: var(--vm-radius-pill);
+    text-decoration: none;
+    transition: background 0.15s;
+    white-space: nowrap;
+
+    &:hover {
+      background: var(--vm-lime-hover);
+    }
+
+    .header__cta-arrow {
+      filter: brightness(0);
+    }
+
+    &--profile {
+      gap: 10px;
+
+      .header__cta-arrow {
+        filter: brightness(0);
+      }
+    }
+  }
+
+  // ── Responsive breakpoints ────────────────────────────────────────────────
+
+  @include mx.respond-below(mx.$bp-md) {
+    &__nav,
+    &__cta-btn,
+    &__lang {
+      display: none;
+    }
+
+    &__hamburger {
+      display: flex;
+    }
+
+    &__pill {
+      padding: 0 20px;
+      background: var(--vm-purple);
+      position: relative;
+      z-index: 95;
+    }
+
+    &__pill--open {
+      border-radius: var(--vm-radius-pill) var(--vm-radius-pill) 0 0;
+    }
+
+    &__brand {
+      color: #ffffff;
+    }
+
+    &__hamburger-line {
+      background: #ffffff;
+    }
   }
 }

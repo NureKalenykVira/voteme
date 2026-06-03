@@ -2,11 +2,11 @@
   <img src="/assets/vectors/invite_vector.svg" class="invite-page__bg" alt="" aria-hidden="true" />
 
   <div class="invite-page__card">
-    <h1 class="invite-page__title">Your voting is ready! 🎉</h1>
-    <p class="invite-page__subtitle">Now invite your participants</p>
+    <h1 class="invite-page__title">{{ 'invite.title' | translate }}</h1>
+    <p class="invite-page__subtitle">{{ 'invite.subtitle' | translate }}</p>
 
     <!-- Share access -->
-    <span class="invite-page__badge">Share access</span>
+    <span class="invite-page__badge">{{ 'invite.shareAccess' | translate }}</span>
 
     <div class="invite-page__share">
       <!-- QR box -->
@@ -19,14 +19,14 @@
           elementType="canvas"
         />
         <button type="button" class="invite-page__qr-download" (click)="downloadQr()">
-          Download
+          {{ 'invite.download' | translate }}
         </button>
       </div>
 
       <!-- Copy fields -->
       <div class="invite-page__copy-fields">
         <div class="invite-page__field">
-          <label class="invite-page__label">Copy code</label>
+          <label class="invite-page__label">{{ 'invite.copyCode' | translate }}</label>
           <div class="invite-page__input-row">
             <input class="invite-page__input" [value]="inviteCode()" readonly />
             <button
@@ -58,7 +58,7 @@
         </div>
 
         <div class="invite-page__field">
-          <label class="invite-page__label">Copy link</label>
+          <label class="invite-page__label">{{ 'invite.copyLink' | translate }}</label>
           <div class="invite-page__input-row">
             <input class="invite-page__input" [value]="inviteLink()" readonly />
             <button
@@ -91,10 +91,10 @@
       </div>
     </div>
 
-    <p class="invite-page__or">or</p>
+    <p class="invite-page__or">{{ 'invite.or' | translate }}</p>
 
     <!-- Upload voter list -->
-    <span class="invite-page__badge">Upload voter list</span>
+    <span class="invite-page__badge">{{ 'invite.uploadVoterList' | translate }}</span>
 
     <div
       class="invite-page__dropzone"
@@ -113,7 +113,7 @@
       <span *ngIf="csvFile()" class="invite-page__csv-name">{{ csvFile()!.name }}</span>
       <input #csvInput type="file" accept=".csv" hidden (change)="onFileSelected($event)" />
     </div>
-    <p class="invite-page__drop-hint">Drop CSV file here or click to upload</p>
+    <p class="invite-page__drop-hint">{{ 'invite.dropHint' | translate }}</p>
 
     @if (csvImportError()) {
       <p class="invite-page__csv-error">{{ csvImportError() }}</p>
@@ -121,29 +121,29 @@
 
     @if (csvImportResult(); as result) {
       <button type="button" class="invite-page__csv-reset-btn" (click)="resetImport()">
-        Import another
+        {{ 'invite.importAnother' | translate }}
       </button>
       <div class="invite-page__csv-result">
         <div class="invite-page__csv-stat invite-page__csv-stat--added">
           <span class="invite-page__csv-stat-num">{{ result.added_count }}</span>
-          <span class="invite-page__csv-stat-label">Added</span>
+          <span class="invite-page__csv-stat-label">{{ 'invite.statAdded' | translate }}</span>
         </div>
         <div class="invite-page__csv-stat invite-page__csv-stat--dup">
           <span class="invite-page__csv-stat-num">{{ result.duplicate_count }}</span>
-          <span class="invite-page__csv-stat-label">Duplicates</span>
+          <span class="invite-page__csv-stat-label">{{ 'invite.statDuplicates' | translate }}</span>
         </div>
         <div class="invite-page__csv-stat invite-page__csv-stat--invalid">
           <span class="invite-page__csv-stat-num">{{ result.invalid_count }}</span>
-          <span class="invite-page__csv-stat-label">Invalid</span>
+          <span class="invite-page__csv-stat-label">{{ 'invite.statInvalid' | translate }}</span>
         </div>
       </div>
       @if (result.invalid_rows.length > 0) {
         <div class="invite-page__csv-invalid-list">
-          <p class="invite-page__csv-invalid-heading">Invalid rows:</p>
+          <p class="invite-page__csv-invalid-heading">{{ 'invite.invalidRowsHeading' | translate }}</p>
           @for (row of result.invalid_rows; track row.row) {
             <div class="invite-page__csv-invalid-row">
-              <span class="invite-page__csv-invalid-rownum">Row {{ row.row }}</span>
-              <span class="invite-page__csv-invalid-email">{{ row.email || '(empty)' }}</span>
+              <span class="invite-page__csv-invalid-rownum">{{ 'invite.rowPrefix' | translate }} {{ row.row }}</span>
+              <span class="invite-page__csv-invalid-email">{{ row.email || ('invite.emptyEmail' | translate) }}</span>
               <span class="invite-page__csv-invalid-reason">{{ row.reason }}</span>
             </div>
           }
@@ -159,14 +159,14 @@
           [disabled]="csvImportLoading()"
           (click)="uploadCsv()"
         >
-          {{ csvImportLoading() ? 'Uploading...' : 'Upload' }}
+          {{ (csvImportLoading() ? 'invite.uploading' : 'invite.upload') | translate }}
         </button>
       }
       <button type="button" class="invite-page__manage-btn" (click)="manageVoters()">
-        Manage Voters
+        {{ 'invite.manageVoters' | translate }}
       </button>
       <button type="button" class="invite-page__done-btn" (click)="done()">
-        Done, go to my votings
+        {{ 'invite.done' | translate }}
         <span class="invite-page__done-icon" aria-hidden="true"></span>
       </button>
     </div>

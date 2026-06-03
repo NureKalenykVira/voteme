@@ -1,6 +1,8 @@
+@use '../../../../../styles/mixins' as mx;
+
 .profile-page {
   min-height: 100vh;
-  background: #C8F135;
+  background: #c8f135;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -63,13 +65,13 @@
 }
 
 .field-label {
-  color: #5A49FF;
+  color: #5a49ff;
   font-weight: 700;
   font-size: 14px;
 }
 
 .profile-input {
-  border: 2px solid #5A49FF;
+  border: 2px solid #5a49ff;
   border-radius: 100px;
   padding: 10px 18px;
   font-size: 15px;
@@ -96,7 +98,7 @@
 }
 
 .forgot-link {
-  color: #5A49FF;
+  color: #5a49ff;
   cursor: pointer;
   text-decoration: underline;
 }
@@ -155,12 +157,12 @@
   }
 
   &.purple {
-    background: #5A49FF;
+    background: #5a49ff;
     color: #fff;
   }
 
   &.red {
-    background: #FF4C4C;
+    background: #ff4c4c;
     color: #fff;
 
     &:disabled {
@@ -195,7 +197,7 @@
 
 .delete-confirm-text {
   font-size: 13px;
-  color: #FF4C4C;
+  color: #ff4c4c;
   font-weight: 600;
 }
 
@@ -210,7 +212,7 @@
 }
 
 .reset-modal-card {
-  background: #2D2D2D;
+  background: #2d2d2d;
   border-radius: 20px;
   padding: 36px 40px;
   width: 420px;
@@ -255,7 +257,7 @@
   font-size: 16px;
   font-weight: 700;
   cursor: pointer;
-  border: 2px solid #C8F135;
+  border: 2px solid #c8f135;
   transition: opacity 0.15s;
 
   &:disabled {
@@ -264,12 +266,68 @@
   }
 
   &--filled {
-    background: #C8F135;
+    background: #c8f135;
     color: #111;
   }
 
   &--outline {
     background: transparent;
-    color: #C8F135;
+    color: #c8f135;
+  }
+}
+
+// ── Responsive ────────────────────────────────────────────────────────────────
+
+@include mx.respond-below(768px) {
+  .profile-section {
+    grid-template-columns: 1fr;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .activity-rows {
+    grid-template-columns: 1fr;
+  }
+}
+
+@include mx.respond-below(mx.$bp-sm) {
+  .profile-page {
+    padding: 12px;
+    align-items: flex-start;
+  }
+
+  .profile-card {
+    padding: 20px;
+    border-radius: 16px;
+  }
+
+  .card-header {
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .save-row {
+    flex-wrap: wrap;
+    justify-content: stretch;
+
+    > * {
+      flex: 1 1 auto;
+    }
+  }
+
+  .action-row {
+    flex-wrap: wrap;
+    justify-content: stretch;
+
+    > * {
+      flex: 1 1 auto;
+    }
+  }
+
+  .reset-modal-title {
+    font-size: 22px;
   }
 }

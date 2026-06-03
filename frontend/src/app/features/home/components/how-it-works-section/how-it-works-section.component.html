@@ -13,14 +13,10 @@
   <div class="hiw__inner">
     <header class="hiw__head">
       <h2 class="hiw__title">
-        <span class="hiw__title-text">HOW IT</span>
-        <span class="hiw__title-pill">WORKS?</span>
+        <span class="hiw__title-text">{{ 'home.hiw.titleText' | translate }}</span>
+        <span class="hiw__title-pill">{{ 'home.hiw.titlePill' | translate }}</span>
       </h2>
 
-      <a routerLink="/auth/register" class="hiw__cta">
-        Get started
-        <img src="/assets/auth/arrow_right.svg" class="hiw__cta-arrow" alt="" />
-      </a>
     </header>
 
     <div class="hiw__grid">
@@ -28,8 +24,8 @@
         *ngFor="let s of steps"
         class="hiw__card"
         [step]="s.step"
-        [title]="s.title"
-        [description]="s.description"
+        [title]="s.title | translate"
+        [description]="s.description | translate"
         [variant]="s.variant"
       />
     </div>

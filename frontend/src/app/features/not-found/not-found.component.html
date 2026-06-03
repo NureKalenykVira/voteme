@@ -1,8 +1,8 @@
 <div class="not-found">
   <div class="not-found__top">
-    <h1 class="not-found__title">This page didn't get enough votes</h1>
-    <p class="not-found__subtitle">Looks like this page was archived or never existed</p>
-    <a class="not-found__btn" routerLink="/home">Go back home</a>
+    <h1 class="not-found__title">{{ 'notFound.title' | translate }}</h1>
+    <p class="not-found__subtitle">{{ 'notFound.subtitle' | translate }}</p>
+    <button type="button" class="not-found__btn" (click)="location.back()">{{ 'notFound.goBack' | translate }}</button>
   </div>
   <div class="not-found__bottom">
     <img

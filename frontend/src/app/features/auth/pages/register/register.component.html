@@ -2,12 +2,12 @@
   <div class="card">
 
     <ng-container *ngIf="formState() === 'form'">
-      <h1 class="title">Nice to meet you!</h1>
+      <h1 class="title">{{ 'auth.register.title' | translate }}</h1>
 
       <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
 
         <ui-text-input
-          label="Full Name"
+          [label]="'auth.register.fullName' | translate"
           id="fullName"
           type="text"
           autocomplete="name"
@@ -15,7 +15,7 @@
         />
 
         <ui-text-input
-          label="Email"
+          [label]="'auth.email' | translate"
           id="email"
           type="email"
           autocomplete="email"
@@ -23,14 +23,14 @@
         />
 
         <ui-password-input
-          label="Password"
+          [label]="'auth.password' | translate"
           id="password"
           autocomplete="new-password"
           formControlName="password"
         />
 
         <ui-password-input
-          label="Confirm password"
+          [label]="'auth.register.confirmPassword' | translate"
           id="confirmPassword"
           autocomplete="new-password"
           formControlName="confirmPassword"
@@ -39,28 +39,28 @@
 
         <ui-checkbox
           id="terms"
-          label="I agree to Terms of Use and Privacy Policy"
+          [label]="'auth.register.terms' | translate"
           formControlName="terms"
         />
 
         <p *ngIf="serverError()" class="server-error">{{ serverError() }}</p>
 
-        <ui-primary-button type="submit" [disabled]="loading()">Create account</ui-primary-button>
+        <ui-primary-button type="submit" [disabled]="loading()">{{ 'auth.register.submit' | translate }}</ui-primary-button>
 
         <div class="separator"></div>
 
         <ui-secondary-button type="button" (click)="goToLogin()">
-          Already have an account? Log in
+          {{ 'auth.register.hasAccount' | translate }}
         </ui-secondary-button>
 
       </form>
     </ng-container>
 
     <ng-container *ngIf="formState() === 'success'">
-      <h1 class="title">Check your inbox!</h1>
-      <p class="success-msg">We sent a confirmation link to your email. Click it to activate your account.</p>
+      <h1 class="title">{{ 'auth.register.successTitle' | translate }}</h1>
+      <p class="success-msg">{{ 'auth.register.successMsg' | translate }}</p>
       <div class="separator"></div>
-      <ui-secondary-button type="button" (click)="goToLogin()">Go to Log in</ui-secondary-button>
+      <ui-secondary-button type="button" (click)="goToLogin()">{{ 'auth.register.goToLogin' | translate }}</ui-secondary-button>
     </ng-container>
 
   </div>

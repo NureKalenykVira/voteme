@@ -77,3 +77,49 @@
   z-index: 2;
   filter: brightness(0) saturate(100%) invert(82%) sepia(55%) saturate(523%) hue-rotate(25deg) brightness(101%);
 }
+
+@media (max-width: 600px) {
+  .not-found {
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .not-found__top {
+    position: relative;
+    z-index: 10;
+    padding: 2rem 1.5rem;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding-bottom: 44vh;
+  }
+
+  .not-found__title {
+    font-size: 1.75rem;
+  }
+
+  .not-found__subtitle {
+    font-size: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .not-found__bottom {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 40vh;
+  }
+
+  .not-found__vector {
+    flex: 0 0 50%;
+    transform: translateY(20%);
+  }
+
+  .not-found__logo {
+    width: 60vw;
+    bottom: -15%;
+  }
+}

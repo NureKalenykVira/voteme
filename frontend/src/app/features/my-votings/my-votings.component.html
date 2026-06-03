@@ -2,7 +2,7 @@
 
 <div class="my-votings">
   <div class="my-votings__hero">
-    <h1 class="my-votings__hero-title">My votings</h1>
+    <h1 class="my-votings__hero-title">{{ 'myVotings.title' | translate }}</h1>
     <span class="my-votings__hero-logo" aria-hidden="true"></span>
   </div>
 </div>
@@ -13,7 +13,7 @@
       <div class="my-votings__status-wrapper">
         <button class="my-votings__filter-btn my-votings__filter-btn--all" [class.is-open]="showStatusDropdown()" (click)="toggleStatusDropdown()">
           <span class="my-votings__btn-icon my-votings__btn-icon--filter"></span>
-          {{ statusLabel() }}
+          {{ statusLabel() | translate }}
           <span class="my-votings__btn-icon my-votings__btn-icon--arrow"></span>
         </button>
         @if (showStatusDropdown()) {
@@ -22,8 +22,8 @@
               <button
                 class="my-votings__status-option"
                 [class.my-votings__status-option--active]="statusFilter() === opt.value"
-                (click)="selectStatus(opt.value, opt.label)"
-              >{{ opt.label }}</button>
+                (click)="selectStatus(opt.value, opt.labelKey)"
+              >{{ opt.labelKey | translate }}</button>
             }
           </div>
         }
@@ -31,7 +31,7 @@
       <div class="my-votings__search-wrapper" [class.is-active]="showSearch()">
         @if (!showSearch()) {
           <button class="my-votings__filter-btn my-votings__filter-btn--search" (click)="toggleSearch()">
-            Search
+            {{ 'myVotings.search' | translate }}
             <span class="my-votings__btn-icon my-votings__btn-icon--search"></span>
           </button>
         } @else {
@@ -40,7 +40,7 @@
             <input
               class="my-votings__search-input"
               type="text"
-              placeholder="Search by title..."
+              [placeholder]="'myVotings.searchPlaceholder' | translate"
               [value]="searchQuery()"
               (input)="onSearchInput($event)"
               autofocus
@@ -52,18 +52,18 @@
     </div>
 
     @if (loading()) {
-      <div class="my-votings__state">Loading...</div>
+      <div class="my-votings__state">{{ 'myVotings.loading' | translate }}</div>
     } @else if (error()) {
       <div class="my-votings__state my-votings__state--error">{{ error() }}</div>
     } @else if (filteredElections().length === 0) {
-      <div class="my-votings__state">No votings found</div>
+      <div class="my-votings__state">{{ 'myVotings.noVotings' | translate }}</div>
     } @else {
       <div class="my-votings__cards">
         @for (election of filteredElections(); track election.id) {
           <div class="my-votings__card" [ngClass]="getCardClass(election.status)">
             <!-- Left -->
             <div class="mv-card__left">
-              <span class="mv-card__badge">{{ getStatusLabel(election.status) }}</span>
+              <span class="mv-card__badge">{{ getStatusLabel(election.status) | translate }}</span>
               <h2 class="mv-card__title">{{ election.title }}</h2>
               @if (election.description) {
                 <p class="mv-card__desc">{{ election.description }}</p>
@@ -72,33 +72,33 @@
             <!-- Right -->
             <div class="mv-card__right">
               <div class="mv-card__meta">
-                <span class="mv-card__meta-label">Started:</span>
+                <span class="mv-card__meta-label">{{ 'myVotings.metaStarted' | translate }}</span>
                 <span class="mv-card__meta-value">{{ formatDate(election.start_date_time) }}</span>
-                <span class="mv-card__meta-label">Ends:</span>
+                <span class="mv-card__meta-label">{{ 'myVotings.metaEnds' | translate }}</span>
                 <span class="mv-card__meta-value">{{ formatDate(election.end_date_time) }}</span>
-                <span class="mv-card__meta-label">Created by:</span>
-                <span class="mv-card__meta-value">{{ isOrganizer(election) ? 'You' : 'Organizer' }}</span>
+                <span class="mv-card__meta-label">{{ 'myVotings.metaCreatedBy' | translate }}</span>
+                <span class="mv-card__meta-value">{{ (isOrganizer(election) ? 'myVotings.metaYou' : 'myVotings.metaOrganizer') | translate }}</span>
               </div>
               <div class="mv-card__actions">
                 @if (isOrganizer(election) && (election.status === 'draft' || election.status === 'published')) {
                   <button class="mv-card__btn mv-card__btn--outline" (click)="navigateEdit(election.id)">
-                    Edit voting
+                    {{ 'myVotings.btnEdit' | translate }}
                     <span class="mv-card__btn-icon mv-card__btn-icon--purple" aria-hidden="true"></span>
                   </button>
                 }
                 <button class="mv-card__btn mv-card__btn--filled" (click)="navigateDetail(election.invitation_code, election.id)">
-                  View details
+                  {{ 'myVotings.btnView' | translate }}
                   <span class="mv-card__btn-icon mv-card__btn-icon--white" aria-hidden="true"></span>
                 </button>
                 @if (isOrganizer(election) && election.status === 'draft') {
                   <button class="mv-card__btn mv-card__btn--danger" (click)="onDeleteClick(election)">
-                    Delete
+                    {{ 'myVotings.btnDelete' | translate }}
                     <span class="mv-card__btn-icon mv-card__btn-icon--white" aria-hidden="true"></span>
                   </button>
                 }
                 @if (isOrganizer(election) && election.status === 'finished') {
                   <button class="mv-card__btn mv-card__btn--outline" (click)="onArchiveClick(election)">
-                    Archive
+                    {{ 'myVotings.btnArchive' | translate }}
                     <span class="mv-card__btn-icon mv-card__btn-icon--purple" aria-hidden="true"></span>
                   </button>
                 }
@@ -110,8 +110,14 @@
     }
     <!-- Pagination -->
     <div class="my-votings__pagination">
-      <button class="my-votings__page-btn" [disabled]="!hasPrev()" (click)="prevPage()">&#8592; Previous</button>
-      <button class="my-votings__page-btn" [disabled]="!hasNext()" (click)="nextPage()">Next &#8594;</button>
+      <button class="my-votings__page-btn" [disabled]="!hasPrev()" (click)="prevPage()">
+        <img src="/assets/auth/arrow_right.svg" class="page-arrow page-arrow--left" alt="" aria-hidden="true" />
+        {{ 'myVotings.pagination.previous' | translate }}
+      </button>
+      <button class="my-votings__page-btn" [disabled]="!hasNext()" (click)="nextPage()">
+        {{ 'myVotings.pagination.next' | translate }}
+        <img src="/assets/auth/arrow_right.svg" class="page-arrow" alt="" aria-hidden="true" />
+      </button>
     </div>
   </div>
 </div>
@@ -120,24 +126,23 @@
   <div class="confirm-overlay" (click)="cancelAction()">
     <div class="confirm-modal" (click)="$event.stopPropagation()">
       <h2 class="confirm-modal__title">
-        @if (action.type === 'delete') { Delete voting? }
-        @else { Archive voting? }
+        {{ (action.type === 'delete' ? 'myVotings.confirmDeleteTitle' : 'myVotings.confirmArchiveTitle') | translate }}
       </h2>
       <p class="confirm-modal__text">
         @if (action.type === 'delete') {
-          Delete <strong>{{ action.election.title }}</strong>? This cannot be undone.
+          {{ 'myVotings.confirmDelete' | translate }} <strong>{{ action.election.title }}</strong>? {{ 'myVotings.confirmDeleteText' | translate }}
         } @else {
-          Archive <strong>{{ action.election.title }}</strong>? It will remain visible but cannot be modified.
+          {{ 'myVotings.confirmArchive' | translate }} <strong>{{ action.election.title }}</strong>? {{ 'myVotings.confirmArchiveText' | translate }}
         }
       </p>
       <div class="confirm-modal__footer">
-        <button type="button" class="confirm-modal__cancel-btn" (click)="cancelAction()">Cancel</button>
+        <button type="button" class="confirm-modal__cancel-btn" (click)="cancelAction()">{{ 'myVotings.cancel' | translate }}</button>
         <button
           type="button"
           class="confirm-modal__confirm-btn"
           [class.confirm-modal__confirm-btn--danger]="action.type === 'delete'"
           (click)="confirmActionExecute()"
-        >Confirm</button>
+        >{{ 'myVotings.confirm' | translate }}</button>
       </div>
     </div>
   </div>

@@ -6,16 +6,16 @@
       @if (electionTitle()) {
         <span class="manage-page__election-badge">{{ electionTitle() }}</span>
       }
-      <h1 class="manage-page__title">Voter List</h1>
+      <h1 class="manage-page__title">{{ 'manageVoters.title' | translate }}</h1>
     </div>
 
     <div class="manage-page__stats">
-      <span class="manage-page__stat">Voters invited · {{ votersInvited() }}</span>
-      <span class="manage-page__stat">Already voted · {{ alreadyVoted() }}</span>
-      <span class="manage-page__stat">Participation · {{ participationPct() }}%</span>
+      <span class="manage-page__stat">{{ 'manageVoters.statInvited' | translate }} · {{ votersInvited() }}</span>
+      <span class="manage-page__stat">{{ 'manageVoters.statVoted' | translate }} · {{ alreadyVoted() }}</span>
+      <span class="manage-page__stat">{{ 'manageVoters.statParticipation' | translate }} · {{ participationPct() }}%</span>
 
       <button type="button" class="manage-page__add-btn" (click)="openAddModal()">
-        <span>Add voter</span>
+        <span>{{ 'manageVoters.addVoter' | translate }}</span>
         <span class="manage-page__add-icon" aria-hidden="true">+</span>
       </button>
     </div>
@@ -24,16 +24,16 @@
       <table class="manage-page__table">
         <thead>
           <tr>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Status</th>
-            <th>Delete</th>
+            <th>{{ 'manageVoters.colName' | translate }}</th>
+            <th>{{ 'manageVoters.colEmail' | translate }}</th>
+            <th>{{ 'manageVoters.colStatus' | translate }}</th>
+            <th>{{ 'manageVoters.colDelete' | translate }}</th>
           </tr>
         </thead>
         <tbody>
           @if (loading()) {
             <tr>
-              <td colspan="4" class="manage-page__state">Loading...</td>
+              <td colspan="4" class="manage-page__state">{{ 'manageVoters.loading' | translate }}</td>
             </tr>
           } @else if (error()) {
             <tr>
@@ -43,14 +43,14 @@
             </tr>
           } @else if (voters().length === 0) {
             <tr>
-              <td colspan="4" class="manage-page__state">No voters added yet</td>
+              <td colspan="4" class="manage-page__state">{{ 'manageVoters.noVoters' | translate }}</td>
             </tr>
           } @else {
             @for (voter of voters(); track voter.id) {
               <tr>
                 <td>{{ voter.name || '—' }}</td>
                 <td>{{ voter.email }}</td>
-                <td>{{ voter.status === 'voted' ? 'Voted' : 'Invited' }}</td>
+                <td>{{ (voter.status === 'voted' ? 'manageVoters.statusVoted' : 'manageVoters.statusInvited') | translate }}</td>
                 <td>
                   <button
                     type="button"
@@ -96,7 +96,8 @@
         [disabled]="!hasPrev()"
         (click)="prevPage()"
       >
-        ← Previous
+        <img src="/assets/auth/arrow_right.svg" class="page-arrow page-arrow--left" alt="" aria-hidden="true" />
+        {{ 'manageVoters.prevPage' | translate }}
       </button>
       <button
         type="button"
@@ -104,18 +105,19 @@
         [disabled]="!hasNext()"
         (click)="nextPage()"
       >
-        Next →
+        {{ 'manageVoters.nextPage' | translate }}
+        <img src="/assets/auth/arrow_right.svg" class="page-arrow" alt="" aria-hidden="true" />
       </button>
     </div>
 
     <div class="manage-page__auditors">
-      <span class="manage-page__section-pill">Auditors</span>
+      <span class="manage-page__section-pill">{{ 'manageVoters.auditors' | translate }}</span>
 
       <div class="manage-page__auditor-add">
         <input
           class="manage-page__auditor-input"
           type="email"
-          placeholder="Auditor email"
+          [placeholder]="'manageVoters.auditorEmailPlaceholder' | translate"
           [value]="auditorEmail()"
           (input)="onAuditorEmailInput($event)"
           (keyup.enter)="addAuditor()"
@@ -126,7 +128,7 @@
           [disabled]="!auditorEmail().trim() || auditorLoading()"
           (click)="addAuditor()"
         >
-          {{ auditorLoading() ? 'Adding...' : 'Add' }}
+          {{ (auditorLoading() ? 'manageVoters.adding' : 'manageVoters.add') | translate }}
         </button>
       </div>
 
@@ -136,7 +138,7 @@
 
       <div class="manage-page__auditor-list">
         @if (auditors().length === 0) {
-          <p class="manage-page__auditor-empty">No auditors assigned yet</p>
+          <p class="manage-page__auditor-empty">{{ 'manageVoters.noAuditors' | translate }}</p>
         } @else {
           @for (auditor of auditors(); track auditor.user_id) {
             <div class="manage-page__auditor-row">
@@ -176,7 +178,7 @@
 
     <div class="manage-page__footer">
       <button type="button" class="manage-page__back-btn" (click)="backToVotings()">
-        Back to my votings
+        {{ 'manageVoters.goBack' | translate }}
         <span class="manage-page__back-icon" aria-hidden="true"></span>
       </button>
     </div>
@@ -185,21 +187,21 @@
   @if (showAddModal()) {
     <div class="add-modal-overlay" (click)="closeAddModal()">
       <div class="add-modal" (click)="$event.stopPropagation()">
-        <h2 class="add-modal__title">Add voters</h2>
+        <h2 class="add-modal__title">{{ 'manageVoters.modalAddTitle' | translate }}</h2>
 
-        <span class="add-modal__badge">Share access</span>
+        <span class="add-modal__badge">{{ 'invite.shareAccess' | translate }}</span>
 
         <div class="add-modal__share">
           <div class="add-modal__qr-box">
             <qrcode [qrdata]="inviteLink()" [width]="96" [margin]="1" elementType="canvas"></qrcode>
             <button type="button" class="add-modal__qr-download" (click)="downloadQr()">
-              Download
+              {{ 'invite.download' | translate }}
             </button>
           </div>
 
           <div class="add-modal__copy-fields">
             <div class="add-modal__field">
-              <span class="add-modal__label">Copy code</span>
+              <span class="add-modal__label">{{ 'invite.copyCode' | translate }}</span>
               <div class="add-modal__input-row">
                 <input class="add-modal__input" type="text" [value]="inviteCode()" readonly />
                 <button
@@ -237,7 +239,7 @@
             </div>
 
             <div class="add-modal__field">
-              <span class="add-modal__label">Copy link</span>
+              <span class="add-modal__label">{{ 'invite.copyLink' | translate }}</span>
               <div class="add-modal__input-row">
                 <input class="add-modal__input" type="text" [value]="inviteLink()" readonly />
                 <button
@@ -276,9 +278,9 @@
           </div>
         </div>
 
-        <p class="add-modal__or">or</p>
+        <p class="add-modal__or">{{ 'invite.or' | translate }}</p>
 
-        <span class="add-modal__badge">Upload voter list</span>
+        <span class="add-modal__badge">{{ 'invite.uploadVoterList' | translate }}</span>
 
         <div
           class="add-modal__dropzone"
@@ -306,7 +308,7 @@
             (change)="onFileSelected($event)"
           />
         </div>
-        <p class="add-modal__drop-hint">Drop CSV file here or click to upload</p>
+        <p class="add-modal__drop-hint">{{ 'invite.dropHint' | translate }}</p>
 
         @if (csvImportError()) {
           <p class="add-modal__csv-error">{{ csvImportError() }}</p>
@@ -314,29 +316,29 @@
 
         @if (csvImportResult(); as result) {
           <button type="button" class="add-modal__csv-reset-btn" (click)="resetImport()">
-            Import another
+            {{ 'invite.importAnother' | translate }}
           </button>
           <div class="add-modal__csv-result">
             <div class="add-modal__csv-stat add-modal__csv-stat--added">
               <span class="add-modal__csv-stat-num">{{ result.added_count }}</span>
-              <span class="add-modal__csv-stat-label">Added</span>
+              <span class="add-modal__csv-stat-label">{{ 'invite.statAdded' | translate }}</span>
             </div>
             <div class="add-modal__csv-stat add-modal__csv-stat--dup">
               <span class="add-modal__csv-stat-num">{{ result.duplicate_count }}</span>
-              <span class="add-modal__csv-stat-label">Duplicates</span>
+              <span class="add-modal__csv-stat-label">{{ 'invite.statDuplicates' | translate }}</span>
             </div>
             <div class="add-modal__csv-stat add-modal__csv-stat--invalid">
               <span class="add-modal__csv-stat-num">{{ result.invalid_count }}</span>
-              <span class="add-modal__csv-stat-label">Invalid</span>
+              <span class="add-modal__csv-stat-label">{{ 'invite.statInvalid' | translate }}</span>
             </div>
           </div>
           @if (result.invalid_rows.length > 0) {
             <div class="add-modal__csv-invalid-list">
-              <p class="add-modal__csv-invalid-heading">Invalid rows:</p>
+              <p class="add-modal__csv-invalid-heading">{{ 'invite.invalidRowsHeading' | translate }}</p>
               @for (row of result.invalid_rows; track row.row) {
                 <div class="add-modal__csv-invalid-row">
-                  <span class="add-modal__csv-invalid-rownum">Row {{ row.row }}</span>
-                  <span class="add-modal__csv-invalid-email">{{ row.email || '(empty)' }}</span>
+                  <span class="add-modal__csv-invalid-rownum">{{ 'invite.rowPrefix' | translate }} {{ row.row }}</span>
+                  <span class="add-modal__csv-invalid-email">{{ row.email || ('invite.emptyEmail' | translate) }}</span>
                   <span class="add-modal__csv-invalid-reason">{{ row.reason }}</span>
                 </div>
               }
@@ -352,12 +354,12 @@
               [disabled]="csvImportLoading()"
               (click)="uploadCsv()"
             >
-              {{ csvImportLoading() ? 'Uploading...' : 'Upload' }}
+              {{ (csvImportLoading() ? 'invite.uploading' : 'invite.upload') | translate }}
               <span class="add-modal__done-icon" aria-hidden="true"></span>
             </button>
           }
           <button type="button" class="add-modal__done-btn" (click)="closeAddModal()">
-            Done
+            {{ 'manageVoters.modalDone' | translate }}
             <span class="add-modal__done-icon" aria-hidden="true"></span>
           </button>
         </div>
@@ -368,18 +370,18 @@
   @if (voterToDelete(); as voter) {
     <div class="confirm-modal-overlay" (click)="cancelRemoveVoter()">
       <div class="confirm-modal" (click)="$event.stopPropagation()">
-        <h2 class="confirm-modal__title">Remove voter?</h2>
+        <h2 class="confirm-modal__title">{{ 'manageVoters.confirmRemoveVoterTitle' | translate }}</h2>
         <p class="confirm-modal__text">
-          Are you sure you want to remove
+          {{ 'manageVoters.confirmRemoveVoterText' | translate }}
           <span class="confirm-modal__email">{{ voter.email }}</span>
-          from the voter list?
+          {{ 'manageVoters.confirmRemoveVoterSuffix' | translate }}
         </p>
         <div class="confirm-modal__footer">
           <button type="button" class="confirm-modal__cancel-btn" (click)="cancelRemoveVoter()">
-            Cancel
+            {{ 'manageVoters.cancel' | translate }}
           </button>
           <button type="button" class="confirm-modal__remove-btn" (click)="confirmRemoveVoter()">
-            Remove
+            {{ 'manageVoters.remove' | translate }}
           </button>
         </div>
       </div>
@@ -388,18 +390,18 @@
   @if (auditorToDelete(); as auditor) {
     <div class="confirm-modal-overlay" (click)="cancelRemoveAuditor()">
       <div class="confirm-modal" (click)="$event.stopPropagation()">
-        <h2 class="confirm-modal__title">Remove auditor?</h2>
+        <h2 class="confirm-modal__title">{{ 'manageVoters.confirmRemoveAuditorTitle' | translate }}</h2>
         <p class="confirm-modal__text">
-          Are you sure you want to remove
+          {{ 'manageVoters.confirmRemoveAuditorText' | translate }}
           <span class="confirm-modal__email">{{ auditor.email }}</span>
-          as an auditor of this election?
+          {{ 'manageVoters.confirmRemoveAuditorSuffix' | translate }}
         </p>
         <div class="confirm-modal__footer">
           <button type="button" class="confirm-modal__cancel-btn" (click)="cancelRemoveAuditor()">
-            Cancel
+            {{ 'manageVoters.cancel' | translate }}
           </button>
           <button type="button" class="confirm-modal__remove-btn" (click)="confirmRemoveAuditor()">
-            Remove
+            {{ 'manageVoters.remove' | translate }}
           </button>
         </div>
       </div>

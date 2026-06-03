@@ -6,6 +6,7 @@ import re
 import secrets
 import uuid
 from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 from typing import Optional
 
 _EMAIL_RE = re.compile(r'^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$')
@@ -161,7 +162,9 @@ class VotingService:
             round(already_voted / voters_invited * 100, 2) if voters_invited > 0 else 0.0
         )
 
-        is_organizer = actor is not None and actor.id == voting.created_by
+        is_organizer = actor is not None and (
+            actor.id == voting.created_by or actor.role == Role.global_admin
+        )
 
         organizer = await self._users.get_by_id(session, voting.created_by)
         organizer_name: Optional[str] = None
@@ -211,6 +214,15 @@ class VotingService:
         if span_end.tzinfo is None:
             span_end = span_end.replace(tzinfo=timezone.utc)
 
+        # Convert to local tz before any alignment/label formatting
+        local_tz = ZoneInfo(settings.app_timezone)
+        span_start = span_start.astimezone(local_tz)
+        span_end = span_end.astimezone(local_tz)
+        timestamps = [
+            (ts if ts.tzinfo is not None else ts.replace(tzinfo=timezone.utc)).astimezone(local_tz)
+            for ts in timestamps
+        ]
+
         total_seconds = (span_end - span_start).total_seconds()
 
         if total_seconds < 3600:
@@ -258,7 +270,7 @@ class VotingService:
 
             count = sum(
                 1 for ts in timestamps
-                if cursor <= (ts if ts.tzinfo is not None else ts.replace(tzinfo=timezone.utc)) < next_cursor
+                if cursor <= ts < next_cursor
             )
             buckets.append(TimelineBucket(label=label, votes=count))
             cursor = next_cursor
