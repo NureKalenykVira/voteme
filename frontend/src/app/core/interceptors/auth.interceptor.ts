@@ -1,12 +1,12 @@
 import { inject } from '@angular/core';
 import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
-import { Router } from '@angular/router';
 import { catchError, throwError } from 'rxjs';
 import { AuthStorageService } from '../services/auth-storage.service';
+import { ModalService } from '../services/modal.service';
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const storage = inject(AuthStorageService);
-  const router = inject(Router);
+  const modalService = inject(ModalService);
 
   const token = storage.getToken();
   const authReq = token
@@ -20,8 +20,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
         err.status === 401 &&
         storage.isAuthenticated()
       ) {
-        storage.clearToken();
-        router.navigate(['/auth/login']);
+        modalService.show('session-expired');
       }
       return throwError(() => err);
     }),

@@ -1,0 +1,663 @@
+:host {
+  display: block;
+  font-family: var(--vm-font);
+}
+
+.au-page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+// ── Toolbar ───────────────────────────────────────────────────────────────────
+
+.au-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+
+  &__actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+
+    @media (max-width: 600px) {
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+  }
+}
+
+@media (max-width: 600px) {
+  .au-filter-wrapper {
+    order: 1;
+    flex: 1;
+  }
+
+  .au-add-btn {
+    order: 2;
+    flex-shrink: 0;
+  }
+
+  .au-search-wrapper {
+    order: 3;
+    flex: 0 0 100%;
+
+    .au-filter-btn {
+      width: 100%;
+      justify-content: space-between;
+    }
+
+    .au-search-box {
+      width: 100%;
+    }
+  }
+}
+
+.au-title {
+  font-size: 28px;
+  font-weight: 900;
+  color: #1a1a1a;
+  margin: 0;
+}
+
+// ── Filter / Search pill buttons (my-votings pattern) ─────────────────────────
+
+.au-filter-wrapper {
+  position: relative;
+}
+
+.au-search-wrapper {
+  transition: flex-basis 0.3s ease;
+}
+
+.au-filter-btn {
+  background: #5b4fe8;
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  padding: 8px 20px;
+  font-family: var(--vm-font);
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  transition: opacity 0.15s;
+
+  &--search {
+    justify-content: flex-end;
+  }
+
+  &:hover {
+    opacity: 0.85;
+  }
+}
+
+.is-open .au-btn-icon--arrow {
+  transform: rotate(180deg);
+}
+
+.au-btn-icon {
+  display: inline-block;
+  flex-shrink: 0;
+  background-color: #ffffff;
+
+  &--filter {
+    width: 22px;
+    height: 22px;
+    -webkit-mask: url('/assets/icons/filter_status.svg') center / 22px 22px no-repeat;
+    mask: url('/assets/icons/filter_status.svg') center / 22px 22px no-repeat;
+  }
+
+  &--arrow {
+    width: 16px;
+    height: 16px;
+    margin-left: auto;
+    transition: transform 0.25s ease;
+    -webkit-mask: url('/assets/icons/arrow_down.svg') center / 16px 16px no-repeat;
+    mask: url('/assets/icons/arrow_down.svg') center / 16px 16px no-repeat;
+  }
+
+  &--search {
+    width: 22px;
+    height: 22px;
+    -webkit-mask: url('/assets/icons/search.svg') center / 22px 22px no-repeat;
+    mask: url('/assets/icons/search.svg') center / 22px 22px no-repeat;
+  }
+}
+
+.au-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+  min-width: 160px;
+  overflow: hidden;
+  z-index: 10;
+  animation: dropdown-in 0.2s ease both;
+}
+
+@keyframes dropdown-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.au-dropdown-option {
+  display: block;
+  width: calc(100% - 12px);
+  padding: 10px 16px;
+  border: none;
+  background: none;
+  font-family: var(--vm-font);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+  color: #1a1a1a;
+  border-radius: 8px;
+  margin: 4px 6px;
+
+  &--active {
+    color: #5b4fe8;
+  }
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.05);
+  }
+}
+
+.au-search-box {
+  background: #5b4fe8;
+  border-radius: 999px;
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  animation: search-expand 0.25s ease both;
+  transform-origin: right center;
+}
+
+@keyframes search-expand {
+  from { opacity: 0; transform: scaleX(0.8); }
+  to   { opacity: 1; transform: scaleX(1); }
+}
+
+.au-search-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #fff;
+  font-family: var(--vm-font);
+  font-size: 14px;
+  font-weight: 600;
+  min-width: 180px;
+
+  &::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+  }
+}
+
+.au-search-close {
+  background: transparent;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  padding: 0;
+  opacity: 0.6;
+  font-family: inherit;
+  transition: opacity 0.15s;
+
+  &:hover {
+    opacity: 1;
+  }
+}
+
+.au-add-btn {
+  padding: 8px 20px;
+  border-radius: 999px;
+  background: #5b4fe8;
+  color: #fff;
+  border: none;
+  font-family: var(--vm-font);
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  transition: opacity 0.15s;
+  &:hover { opacity: 0.88; }
+}
+
+.au-add-icon {
+  width: 20px;
+  height: 20px;
+  background-color: #fff;
+  -webkit-mask: url('/assets/icons/plus.svg') center / contain no-repeat;
+  mask: url('/assets/icons/plus.svg') center / contain no-repeat;
+  flex-shrink: 0;
+}
+
+// ── Table ─────────────────────────────────────────────────────────────────────
+
+.au-table-wrap {
+  background: #fff;
+  border-radius: 20px;
+  overflow-x: auto;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+}
+
+.au-table {
+  width: 100%;
+  border-collapse: collapse;
+
+  thead tr {
+    background: #5b4fe8;
+
+    th {
+      padding: 14px 18px;
+      text-align: left;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+  }
+
+  tbody tr {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    transition: background 0.12s;
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    &:nth-child(even) {
+      background: rgba(91, 79, 232, 0.03);
+    }
+
+    &:hover {
+      background: rgba(91, 79, 232, 0.07);
+    }
+
+    &.au-row--deleted {
+      opacity: 0.45;
+    }
+  }
+
+  td {
+    padding: 12px 18px;
+    color: #1a1a1a;
+    font-size: 14px;
+    font-weight: 500;
+  }
+}
+
+.au-email {
+  font-family: 'Fira Code', ui-monospace, monospace;
+  font-size: 13px !important;
+}
+
+// ── Row role pill dropdown ─────────────────────────────────────────────────────
+
+.au-row-role-wrapper {
+  position: relative;
+}
+
+.au-row-role-btn {
+  background: #fff;
+  color: #1a1a1a;
+  border: 2px solid rgba(91, 79, 232, 0.25);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-family: var(--vm-font);
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  width: 130px;
+  justify-content: space-between;
+  transition: border-color 0.15s;
+
+  .au-btn-icon--arrow {
+    background-color: #5b4fe8;
+    opacity: 0.7;
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  &.is-open {
+    border-color: #5b4fe8;
+    .au-btn-icon--arrow { transform: rotate(180deg); }
+  }
+
+  &:hover:not(:disabled) {
+    border-color: #5b4fe8;
+  }
+}
+
+.au-row-role-dropdown-fixed {
+  position: fixed;
+  z-index: 1000;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+  min-width: 140px;
+  overflow: visible;
+  padding: 4px 0;
+}
+
+// ── Badges ────────────────────────────────────────────────────────────────────
+
+.au-badge {
+  display: inline-block;
+  padding: 3px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+
+  &--active {
+    background: rgba(200, 241, 53, 0.25);
+    color: #3d6b00;
+  }
+
+  &--unconfirmed {
+    background: rgba(255, 193, 7, 0.2);
+    color: #7a5700;
+  }
+
+  &--deleted {
+    background: rgba(192, 57, 43, 0.12);
+    color: #c0392b;
+  }
+}
+
+// ── Delete button ─────────────────────────────────────────────────────────────
+
+.au-delete-btn {
+  background: rgba(192, 57, 43, 0.1);
+  border: 2px solid rgba(192, 57, 43, 0.25);
+  color: #c0392b;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: inherit;
+
+  &:hover:not(:disabled) {
+    background: rgba(192, 57, 43, 0.2);
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+
+// ── Pagination ────────────────────────────────────────────────────────────────
+
+.au-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 0;
+}
+
+.au-page-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 20px;
+  border-radius: 999px;
+  border: none;
+  background: #c8f135;
+  color: #1a1a1a;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.15s;
+
+  &:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+
+  &:hover:not(:disabled) {
+    opacity: 0.85;
+  }
+}
+
+.page-arrow {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  filter: brightness(0);
+
+  &--left {
+    transform: scaleX(-1);
+  }
+}
+
+.au-page-info {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+// ── State message ─────────────────────────────────────────────────────────────
+
+.au-state {
+  text-align: center;
+  padding: 48px;
+  font-size: 16px;
+  font-weight: 600;
+  color: rgba(26, 26, 26, 0.5);
+}
+
+// ── Modal overlay ─────────────────────────────────────────────────────────────
+
+.au-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  animation: overlay-in 0.15s ease both;
+}
+
+@keyframes overlay-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.au-modal {
+  background: #fff;
+  border-radius: 20px;
+  padding: 32px 28px 24px;
+  max-width: 440px;
+  width: calc(100% - 40px);
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.18);
+  animation: modal-in 0.2s ease both;
+
+  &__title {
+    font-size: 22px;
+    font-weight: 900;
+    color: #1a1a1a;
+    margin: 0 0 20px;
+  }
+
+  &__text {
+    font-size: 15px;
+    color: #1a1a1a;
+    line-height: 1.5;
+    margin: 0 0 24px;
+  }
+
+  &__form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  &__footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 8px;
+  }
+
+  &__cancel {
+    background: transparent;
+    border: 2px solid rgba(0, 0, 0, 0.15);
+    border-radius: 999px;
+    padding: 8px 22px;
+    font-size: 14px;
+    font-weight: 700;
+    font-family: inherit;
+    color: #1a1a1a;
+    cursor: pointer;
+    transition: opacity 0.15s;
+
+    &:hover { opacity: 0.7; }
+  }
+
+  &__submit {
+    background: #5b4fe8;
+    border: 2px solid transparent;
+    border-radius: 999px;
+    padding: 8px 22px;
+    font-size: 14px;
+    font-weight: 700;
+    font-family: inherit;
+    color: #fff;
+    cursor: pointer;
+    transition: opacity 0.15s;
+
+    &:hover:not(:disabled) { opacity: 0.88; }
+
+    &:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    &--danger {
+      background: #c0392b;
+    }
+  }
+
+  ::ng-deep ui-text-input,
+  ::ng-deep ui-password-input {
+    .label {
+      color: #1a1a1a;
+    }
+
+    .input {
+      color: #1a1a1a;
+      border-color: rgba(91, 79, 232, 0.3);
+      background: #f4f4f8;
+
+      &::placeholder {
+        color: rgba(26, 26, 26, 0.35);
+      }
+
+      &:focus {
+        border-color: #5b4fe8;
+        background: #fff;
+      }
+    }
+
+    .input.invalid {
+      border-color: #ef4444;
+    }
+
+    .error-msg {
+      color: #ef4444;
+    }
+  }
+}
+
+@keyframes modal-in {
+  from { opacity: 0; transform: scale(0.95) translateY(8px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+// ── Form fields ───────────────────────────────────────────────────────────────
+
+.au-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.au-form-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1a1a1a;
+  opacity: 0.7;
+}
+
+.au-form-input {
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 2px solid rgba(91, 79, 232, 0.25);
+  background: #f4f4f8;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  color: #1a1a1a;
+  outline: none;
+  transition: border-color 0.15s;
+
+  &:focus {
+    border-color: #5b4fe8;
+    background: #fff;
+  }
+}
+
+.au-form-error {
+  font-size: 12px;
+  font-weight: 600;
+  color: #c0392b;
+}
+
+.au-modal-role-wrapper {
+  position: relative;
+}
+
+.au-modal-role-btn {
+  width: 100%;
+  justify-content: space-between;
+  padding: 10px 16px;
+}
+
+.au-modal-role-dropdown {
+  width: 100%;
+}

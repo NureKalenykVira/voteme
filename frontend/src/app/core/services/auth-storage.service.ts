@@ -24,6 +24,18 @@ export class AuthStorageService {
     }
   }
 
+  getCurrentUserId(): string | null {
+    const token = this._token();
+    if (!token) return null;
+    try {
+      const base64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+      const payload = JSON.parse(atob(base64)) as { sub?: string };
+      return payload.sub ?? null;
+    } catch {
+      return null;
+    }
+  }
+
   setToken(token: string): void {
     localStorage.setItem('auth_token', token);
     this._token.set(token);

@@ -1,0 +1,231 @@
+<div class="au-page">
+  <div class="au-toolbar">
+    <h1 class="au-title">{{ 'admin.users.title' | translate }}</h1>
+    <div class="au-toolbar__actions">
+      <div class="au-filter-wrapper">
+        <button
+          class="au-filter-btn"
+          [class.is-open]="showRoleDropdown()"
+          (click)="toggleRoleDropdown()"
+        >
+          <span class="au-btn-icon au-btn-icon--filter"></span>
+          {{ roleLabel() | translate }}
+          <span class="au-btn-icon au-btn-icon--arrow"></span>
+        </button>
+        @if (showRoleDropdown()) {
+          <div class="au-dropdown">
+            @for (opt of roleOptions; track opt.value) {
+              <button
+                class="au-dropdown-option"
+                [class.au-dropdown-option--active]="roleFilter() === opt.value"
+                (click)="selectRole(opt.value, opt.labelKey)"
+              >
+                {{ opt.labelKey | translate }}
+              </button>
+            }
+          </div>
+        }
+      </div>
+      <div class="au-search-wrapper" [class.is-active]="showSearch()">
+        @if (!showSearch()) {
+          <button class="au-filter-btn au-filter-btn--search" (click)="showSearch.set(true)">
+            {{ 'admin.users.search' | translate }}
+            <span class="au-btn-icon au-btn-icon--search"></span>
+          </button>
+        } @else {
+          <div class="au-search-box">
+            <span class="au-btn-icon au-btn-icon--search"></span>
+            <input
+              class="au-search-input"
+              type="text"
+              [placeholder]="'admin.users.searchPlaceholder' | translate"
+              [value]="searchQuery()"
+              (input)="onSearch($event)"
+              autofocus
+            />
+            <button class="au-search-close" (click)="closeSearch()">&#x2715;</button>
+          </div>
+        }
+      </div>
+      <button class="au-add-btn" (click)="showAddModal.set(true)">
+        {{ 'admin.users.modalAddTitle' | translate }}
+        <span class="au-btn-icon au-add-icon"></span>
+      </button>
+    </div>
+  </div>
+
+  @if (loadError()) {
+    <div class="au-state au-state--error">{{ loadError() }}</div>
+  } @else if (loading()) {
+    <div class="au-state">{{ 'admin.users.loading' | translate }}</div>
+  } @else if (!users()?.items?.length) {
+    <div class="au-state">{{ 'admin.users.noUsers' | translate }}</div>
+  } @else {
+    <div class="au-table-wrap">
+      <table class="au-table">
+        <thead>
+          <tr>
+            <th>{{ 'admin.users.colName' | translate }}</th>
+            <th>{{ 'admin.users.colEmail' | translate }}</th>
+            <th>{{ 'admin.users.colRole' | translate }}</th>
+            <th>{{ 'admin.users.colStatus' | translate }}</th>
+            <th>{{ 'admin.users.colDelete' | translate }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (user of users()?.items; track user.id) {
+            <tr [class.au-row--deleted]="user.is_deleted">
+              <td>{{ user.full_name ?? '—' }}</td>
+              <td class="au-email">{{ user.email }}</td>
+              <td>
+                <div class="au-row-role-wrapper">
+                  <button
+                    type="button"
+                    class="au-row-role-btn"
+                    [class.is-open]="openRoleDropdown() === user.id"
+                    [disabled]="user.is_deleted"
+                    (click)="toggleRowRoleDropdown(user.id, $event)"
+                  >
+                    {{ getRoleLabel(user.role) }}
+                    <span class="au-btn-icon au-btn-icon--arrow"></span>
+                  </button>
+                </div>
+              </td>
+              <td>
+                @if (user.is_deleted) {
+                  <span class="au-badge au-badge--deleted">{{ 'admin.users.statusDeleted' | translate }}</span>
+                } @else if (!user.is_confirmed) {
+                  <span class="au-badge au-badge--unconfirmed">{{ 'admin.users.statusUnconfirmed' | translate }}</span>
+                } @else {
+                  <span class="au-badge au-badge--active">{{ 'admin.users.statusActive' | translate }}</span>
+                }
+              </td>
+              <td>
+                <button
+                  class="au-delete-btn"
+                  (click)="onDelete(user)"
+                  [disabled]="user.is_deleted || isCurrentUser(user.id)"
+                  title="Delete user"
+                >
+                  ✕
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="au-pagination">
+      <button class="au-page-btn" (click)="prevPage()" [disabled]="page() <= 1">
+        <img src="/assets/auth/arrow_right.svg" class="page-arrow page-arrow--left" alt="" aria-hidden="true" />
+        Previous
+      </button>
+      <span class="au-page-info">{{ 'admin.users.page' | translate }} {{ page() }}</span>
+      <button class="au-page-btn" (click)="nextPage()" [disabled]="!hasNext()">
+        Next
+        <img src="/assets/auth/arrow_right.svg" class="page-arrow" alt="" aria-hidden="true" />
+      </button>
+    </div>
+  }
+</div>
+
+@if (showAddModal()) {
+  <div class="au-modal-overlay" (click)="showAddModal.set(false)">
+    <div class="au-modal" (click)="$event.stopPropagation()">
+      <h2 class="au-modal__title">{{ 'admin.users.modalAddTitle' | translate }}</h2>
+      <form [formGroup]="addUserForm" (ngSubmit)="submitAddUser()" class="au-modal__form">
+        <ui-text-input
+          [label]="'admin.users.fieldFullName' | translate"
+          id="au-full-name"
+          type="text"
+          formControlName="full_name"
+        />
+
+        <ui-text-input [label]="'admin.users.fieldEmail' | translate" id="au-email" type="email" formControlName="email" />
+
+        <!-- Custom role dropdown (pill style like filter) -->
+        <div class="au-form-field">
+          <label class="au-form-label">{{ 'admin.users.fieldRole' | translate }}</label>
+          <div class="au-modal-role-wrapper">
+            <button
+              type="button"
+              class="au-filter-btn au-modal-role-btn"
+              [class.is-open]="showModalRoleDropdown()"
+              (click)="showModalRoleDropdown.update((v) => !v)"
+            >
+              {{ modalRoleLabel() | translate }}
+              <span class="au-btn-icon au-btn-icon--arrow"></span>
+            </button>
+            @if (showModalRoleDropdown()) {
+              <div class="au-dropdown au-modal-role-dropdown">
+                @for (opt of modalRoleOptions; track opt.value) {
+                  <button
+                    type="button"
+                    class="au-dropdown-option"
+                    [class.au-dropdown-option--active]="
+                      addUserForm.get('role')?.value === opt.value
+                    "
+                    (click)="selectModalRole(opt.value, opt.labelKey)"
+                  >
+                    {{ opt.labelKey | translate }}
+                  </button>
+                }
+              </div>
+            }
+          </div>
+        </div>
+
+        <ui-password-input [label]="'admin.users.fieldPassword' | translate" id="au-password" formControlName="password" />
+        <p class="au-form-hint">{{ 'admin.users.passwordHint' | translate }}</p>
+
+        <div class="au-modal__footer">
+          <button type="button" class="au-modal__cancel" (click)="showAddModal.set(false)">
+            {{ 'admin.users.cancel' | translate }}
+          </button>
+          <button
+            type="submit"
+            class="au-modal__submit"
+            [disabled]="addUserForm.invalid || saving()"
+          >
+            {{ saving() ? ('admin.users.creating' | translate) : ('admin.users.create' | translate) }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}
+
+@if (confirmDelete(); as user) {
+  <div class="au-modal-overlay" (click)="confirmDelete.set(null)">
+    <div class="au-modal" (click)="$event.stopPropagation()">
+      <h2 class="au-modal__title">{{ 'admin.users.deleteTitle' | translate }}</h2>
+      <p class="au-modal__text">
+        {{ 'admin.users.deleteText' | translate }} <strong>{{ user.email }}</strong>? {{ 'admin.users.deleteText2' | translate }}
+      </p>
+      <div class="au-modal__footer">
+        <button class="au-modal__cancel" (click)="confirmDelete.set(null)">{{ 'admin.users.cancel' | translate }}</button>
+        <button class="au-modal__submit au-modal__submit--danger" (click)="confirmDeleteUser()">
+          {{ 'admin.users.delete' | translate }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+@if (openRoleDropdown(); as openId) {
+  @if (dropdownPos(); as pos) {
+    <div class="au-row-role-dropdown-fixed" [style.top.px]="pos.top" [style.left.px]="pos.left">
+      @for (opt of modalRoleOptions; track opt.value) {
+        <button
+          type="button"
+          class="au-dropdown-option"
+          [class.au-dropdown-option--active]="getUserRole(openId) === opt.value"
+          (click)="selectRowRole(openId, opt.value)"
+        >
+          {{ opt.labelKey | translate }}
+        </button>
+      }
+    </div>
+  }
+}

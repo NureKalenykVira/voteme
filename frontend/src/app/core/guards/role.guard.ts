@@ -1,12 +1,14 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
 import { AuthStorageService } from '../services/auth-storage.service';
+import { ModalService } from '../services/modal.service';
 import { Role } from '../../features/auth/models/auth.models';
 
 export function roleGuard(...allowedRoles: Role[]): CanActivateFn {
   return () => {
     const auth = inject(AuthStorageService);
     const router = inject(Router);
+    const modalService = inject(ModalService);
 
     if (!auth.isAuthenticated()) {
       return router.createUrlTree(['/auth/login']);
@@ -17,6 +19,7 @@ export function roleGuard(...allowedRoles: Role[]): CanActivateFn {
       return true;
     }
 
-    return router.createUrlTree(['/profile']);
+    modalService.show('forbidden');
+    return false;
   };
 }
