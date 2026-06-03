@@ -21,6 +21,7 @@ class Settings(BaseSettings):
     smtp_start_tls: bool = False
     smtp_use_tls: bool = False
     frontend_url: str = "http://localhost:4200"
+    app_timezone: str = "Europe/Kyiv"
 
     model_config = SettingsConfigDict(
         env_file=".env",
