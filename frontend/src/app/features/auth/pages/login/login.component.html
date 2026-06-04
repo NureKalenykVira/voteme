@@ -1,11 +1,11 @@
 <ui-auth-layout [vector]="vector" [vectorLogin]="true" [decoWords]="decoWords">
   <div class="card">
-    <h1 class="title">Welcome back!</h1>
+    <h1 class="title">{{ 'auth.login.title' | translate }}</h1>
 
     <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
 
       <ui-text-input
-        label="Email"
+        [label]="'auth.email' | translate"
         id="loginEmail"
         type="email"
         autocomplete="email"
@@ -13,22 +13,22 @@
       />
 
       <ui-password-input
-        label="Password"
+        [label]="'auth.password' | translate"
         id="loginPassword"
         autocomplete="current-password"
         formControlName="password"
       />
 
-      <a class="forgot-link" href="#">Forgot password?</a>
+      <a class="forgot-link" href="#">{{ 'auth.login.forgotPassword' | translate }}</a>
 
       <p *ngIf="serverError()" class="server-error">{{ serverError() }}</p>
 
-      <ui-primary-button type="submit" [disabled]="loading()">Log in</ui-primary-button>
+      <ui-primary-button type="submit" [disabled]="loading()">{{ 'auth.login.submit' | translate }}</ui-primary-button>
 
       <div class="separator"></div>
 
       <ui-secondary-button type="button" (click)="goToRegister()">
-        Don't have an account? Sign up
+        {{ 'auth.login.noAccount' | translate }}
       </ui-secondary-button>
 
     </form>

@@ -1,0 +1,144 @@
+<div class="ae-page">
+  <div class="ae-toolbar">
+    <h1 class="ae-title">{{ 'admin.elections.title' | translate }}</h1>
+    <div class="ae-toolbar__actions">
+      <div class="ae-filter-wrapper">
+        <button
+          class="ae-filter-btn"
+          [class.is-open]="showStatusDropdown()"
+          (click)="toggleStatusDropdown()"
+        >
+          <span class="ae-btn-icon ae-btn-icon--filter"></span>
+          {{ statusLabel() | translate }}
+          <span class="ae-btn-icon ae-btn-icon--arrow"></span>
+        </button>
+        @if (showStatusDropdown()) {
+          <div class="ae-dropdown">
+            @for (opt of statusOptions; track opt.value) {
+              <button
+                class="ae-dropdown-option"
+                [class.ae-dropdown-option--active]="statusFilter() === opt.value"
+                (click)="selectStatus(opt.value, opt.labelKey)"
+              >
+                {{ opt.labelKey | translate }}
+              </button>
+            }
+          </div>
+        }
+      </div>
+      <div class="ae-search-wrapper" [class.is-active]="showSearch()">
+        @if (!showSearch()) {
+          <button class="ae-filter-btn ae-filter-btn--search" (click)="showSearch.set(true)">
+            {{ 'admin.elections.search' | translate }}
+            <span class="ae-btn-icon ae-btn-icon--search"></span>
+          </button>
+        } @else {
+          <div class="ae-search-box">
+            <span class="ae-btn-icon ae-btn-icon--search"></span>
+            <input
+              class="ae-search-input"
+              type="text"
+              [placeholder]="'admin.elections.searchPlaceholder' | translate"
+              [value]="searchQuery()"
+              (input)="onSearch($event)"
+              autofocus
+            />
+            <button class="ae-search-close" (click)="closeSearch()">&#x2715;</button>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+
+  @if (loadError()) {
+    <div class="ae-state ae-state--error">{{ loadError() }}</div>
+  } @else if (loading()) {
+    <div class="ae-state">{{ 'admin.elections.loading' | translate }}</div>
+  } @else if (!elections()?.items?.length) {
+    <div class="ae-state">{{ 'admin.elections.noElections' | translate }}</div>
+  } @else {
+    <div class="ae-table-wrap">
+      <table class="ae-table">
+        <thead>
+          <tr>
+            <th>{{ 'admin.elections.colTitle' | translate }}</th>
+            <th>{{ 'admin.elections.colStatus' | translate }}</th>
+            <th>{{ 'admin.elections.colOrganizer' | translate }}</th>
+            <th>{{ 'admin.elections.colStart' | translate }}</th>
+            <th>{{ 'admin.elections.colEnd' | translate }}</th>
+            <th>{{ 'admin.elections.colActions' | translate }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (e of elections()?.items; track e.id) {
+            <tr>
+              <td>{{ e.title }}</td>
+              <td>
+                <span class="ae-status-badge ae-status-badge--{{ e.status }}">
+                  {{ getElectionStatusKey(e.status) | translate }}
+                </span>
+              </td>
+              <td class="ae-id" [title]="e.organizer_email ?? e.created_by ?? ''">
+                {{ e.organizer_email ?? (e.created_by ?? '' | slice: 0 : 8) + '...' }}
+              </td>
+              <td>{{ e.start_date_time | date: 'dd.MM.yy HH:mm' }}</td>
+              <td>{{ e.end_date_time | date: 'dd.MM.yy HH:mm' }}</td>
+              <td class="ae-actions">
+                <button
+                  class="ae-action-btn ae-action-btn--results"
+                  (click)="goToResults(e.id)"
+                  title="View results"
+                >
+                  {{ 'admin.elections.btnResults' | translate }}
+                </button>
+                <button
+                  class="ae-action-btn ae-action-btn--log"
+                  (click)="goToEventLog(e.id)"
+                  title="View event log"
+                >
+                  {{ 'admin.elections.btnLog' | translate }}
+                </button>
+                <button
+                  class="ae-action-btn ae-action-btn--delete"
+                  (click)="onDelete(e)"
+                  title="Delete"
+                >
+                  &#x2715;
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="ae-pagination">
+      <button class="ae-page-btn" (click)="prevPage()" [disabled]="page() <= 1">
+        <img src="/assets/auth/arrow_right.svg" class="page-arrow page-arrow--left" alt="" aria-hidden="true" />
+        Previous
+      </button>
+      <span class="ae-page-info">{{ 'admin.elections.page' | translate }} {{ page() }}</span>
+      <button class="ae-page-btn" (click)="nextPage()" [disabled]="!hasNext()">
+        Next
+        <img src="/assets/auth/arrow_right.svg" class="page-arrow" alt="" aria-hidden="true" />
+      </button>
+    </div>
+  }
+</div>
+
+@if (confirmDelete(); as e) {
+  <div class="ae-modal-overlay" (click)="confirmDelete.set(null)">
+    <div class="ae-modal" (click)="$event.stopPropagation()">
+      <h2 class="ae-modal__title">{{ 'admin.elections.deleteTitle' | translate }}</h2>
+      <p class="ae-modal__text">
+        {{ 'admin.elections.deleteText' | translate }} <strong>{{ e.title }}</strong> ({{ getElectionStatusKey(e.status) | translate }})? {{ 'admin.elections.deleteText2' | translate }}
+      </p>
+      <div class="ae-modal__footer">
+        <button class="ae-modal__cancel" (click)="confirmDelete.set(null)">{{ 'admin.elections.cancel' | translate }}</button>
+        <button class="ae-modal__submit ae-modal__submit--danger" (click)="confirmDeleteElection()">
+          {{ 'admin.elections.delete' | translate }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

@@ -11,16 +11,18 @@ import {
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { PublicHeaderComponent } from '../../shared/layout/public-header/public-header.component';
 import { PublicFooterComponent } from '../../shared/layout/public-footer/public-footer.component';
 import { ElectionsApiService } from '../elections/services/elections-api.service';
 import { ElectionListResponse, ElectionResponse } from '../elections/models/elections.models';
 import { AuthStorageService } from '../../core/services/auth-storage.service';
+import { LanguageService } from '../../core/services/language.service';
 
 @Component({
   selector: 'app-my-votings',
   standalone: true,
-  imports: [CommonModule, FormsModule, PublicHeaderComponent, PublicFooterComponent],
+  imports: [CommonModule, FormsModule, TranslatePipe, PublicHeaderComponent, PublicFooterComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './my-votings.component.html',
   styleUrls: ['./my-votings.component.scss'],
@@ -30,6 +32,8 @@ export class MyVotingsComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly authStorage = inject(AuthStorageService);
   private readonly el = inject(ElementRef);
+  private readonly translate = inject(TranslateService);
+  private readonly language = inject(LanguageService);
 
   private readonly currentUserId = this.getCurrentUserId();
 
@@ -41,17 +45,17 @@ export class MyVotingsComponent implements OnInit {
   readonly searchQuery = signal('');
   readonly statusFilter = signal('');
   readonly showStatusDropdown = signal(false);
-  readonly statusLabel = signal('All');
+  readonly statusLabel = signal('myVotings.statusAll');
   readonly showSearch = signal(false);
   readonly confirmAction = signal<{ type: 'delete' | 'archive'; election: ElectionResponse } | null>(null);
 
   readonly statusOptions = [
-    { value: '', label: 'All' },
-    { value: 'active', label: 'Active' },
-    { value: 'published', label: 'Upcoming' },
-    { value: 'draft', label: 'Draft' },
-    { value: 'finished', label: 'Concluded' },
-    { value: 'archived', label: 'Archived' },
+    { value: '', labelKey: 'myVotings.statusAll' },
+    { value: 'active', labelKey: 'myVotings.statusActive' },
+    { value: 'published', labelKey: 'myVotings.statusUpcoming' },
+    { value: 'draft', labelKey: 'myVotings.statusDraft' },
+    { value: 'finished', labelKey: 'myVotings.statusConcluded' },
+    { value: 'archived', labelKey: 'myVotings.statusArchived' },
   ];
 
   readonly pageSize = 10;
@@ -82,7 +86,7 @@ export class MyVotingsComponent implements OnInit {
           this.loading.set(false);
         },
         error: (err: { error?: { detail?: string } }) => {
-          this.error.set(err?.error?.detail ?? 'Failed to load votings');
+          this.error.set(err?.error?.detail ?? this.translate.instant('myVotings.errorLoad'));
           this.loading.set(false);
         },
       });
@@ -113,22 +117,25 @@ export class MyVotingsComponent implements OnInit {
   }
 
   formatDate(iso: string): string {
-    return new Date(iso).toLocaleDateString('en-US', {
+    const locale = this.language.currentLang() === 'uk' ? 'uk-UA' : 'en-US';
+    return new Date(iso).toLocaleString(locale, {
       month: 'short',
       day: 'numeric',
       year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
     });
   }
 
   getStatusLabel(status: string): string {
     const map: Record<string, string> = {
-      active: 'ACTIVE',
-      published: 'UPCOMING',
-      finished: 'CONCLUDED',
-      draft: 'DRAFT',
-      archived: 'ARCHIVED',
+      active: 'myVotings.badgeActive',
+      published: 'myVotings.badgeUpcoming',
+      finished: 'myVotings.badgeConcluded',
+      draft: 'myVotings.badgeDraft',
+      archived: 'myVotings.badgeArchived',
     };
-    return map[status] ?? status.toUpperCase();
+    return map[status] ?? 'myVotings.badgeArchived';
   }
 
   getCardClass(status: string): string {
@@ -150,8 +157,8 @@ export class MyVotingsComponent implements OnInit {
     this.showStatusDropdown.update((v) => !v);
   }
 
-  selectStatus(value: string, label: string): void {
-    this.statusLabel.set(label);
+  selectStatus(value: string, labelKey: string): void {
+    this.statusLabel.set(labelKey);
     this.statusFilter.set(value);
     this.page.set(1);
     this.showStatusDropdown.set(false);
@@ -209,7 +216,7 @@ export class MyVotingsComponent implements OnInit {
           this.loadElections();
         },
         error: (err: { error?: { detail?: string } }) => {
-          this.error.set(err?.error?.detail ?? 'Failed to delete voting');
+          this.error.set(err?.error?.detail ?? this.translate.instant('myVotings.errorDelete'));
           this.confirmAction.set(null);
         },
       });
@@ -220,7 +227,7 @@ export class MyVotingsComponent implements OnInit {
           this.loadElections();
         },
         error: (err: { error?: { detail?: string } }) => {
-          this.error.set(err?.error?.detail ?? 'Failed to archive voting');
+          this.error.set(err?.error?.detail ?? this.translate.instant('myVotings.errorArchive'));
           this.confirmAction.set(null);
         },
       });

@@ -1,20 +1,28 @@
-import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, computed, inject, OnInit, signal } from '@angular/core';
+import { CommonModule, Location } from '@angular/common';
+import { ActivatedRoute, RouterLink } from '@angular/router';
+import { take } from 'rxjs/operators';
+import { TranslateService, TranslatePipe } from '@ngx-translate/core';
 import { AuditApiService } from '../../services/audit-api.service';
 import { AuditLogResponse, VerifyChainResponse } from '../../models/audit.models';
 import { PublicFooterComponent } from '../../../../shared/layout/public-footer/public-footer.component';
+import { LanguageService } from '../../../../core/services/language.service';
 
 @Component({
   selector: 'app-event-log',
   standalone: true,
-  imports: [CommonModule, RouterLink, PublicFooterComponent],
+  imports: [CommonModule, RouterLink, PublicFooterComponent, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './event-log.component.html',
   styleUrls: ['./event-log.component.scss'],
 })
 export class EventLogComponent implements OnInit {
   private readonly auditApi = inject(AuditApiService);
+  private readonly route = inject(ActivatedRoute);
+  private readonly translate = inject(TranslateService);
+  private readonly language = inject(LanguageService);
+  private readonly cdr = inject(ChangeDetectorRef);
+  readonly location = inject(Location);
 
   readonly data = signal<AuditLogResponse | null>(null);
   readonly chainStatus = signal<VerifyChainResponse | null>(null);
@@ -23,32 +31,43 @@ export class EventLogComponent implements OnInit {
   readonly page = signal(1);
   readonly actionFilter = signal('');
   readonly searchQuery = signal('');
+  readonly votingIdFilter = signal('');
 
   private readonly pageSize = 20;
 
+  readonly locale = computed(() => this.language.currentLang() === 'uk' ? 'uk-UA' : 'en-US');
+
   readonly showActionDropdown = signal(false);
-  readonly actionLabel = signal('All');
+  readonly actionLabel = signal('eventLog.filterAll');
   readonly showSearch = signal(false);
 
   readonly actionOptions = [
-    { value: '', label: 'All' },
-    { value: 'VOTE_SUBMITTED', label: 'Vote submitted' },
-    { value: 'ELECTION_CREATED', label: 'Election created' },
-    { value: 'ELECTION_PUBLISHED', label: 'Election published' },
-    { value: 'ELECTION_ACTIVATED', label: 'Election activated' },
-    { value: 'ELECTION_FINISHED', label: 'Election finished' },
-    { value: 'ELECTION_ARCHIVED', label: 'Election archived' },
-    { value: 'VOTER_ADDED', label: 'Voter added' },
-    { value: 'VOTER_REMOVED', label: 'Voter removed' },
-    { value: 'VOTER_BULK_IMPORTED', label: 'Voters imported' },
-    { value: 'BLOCKCHAIN_RECORD', label: 'Blockchain record' },
+    { value: '', labelKey: 'eventLog.filterAll' },
+    { value: 'VOTE_SUBMITTED', labelKey: 'eventLog.actions.VOTE_SUBMITTED' },
+    { value: 'ELECTION_CREATED', labelKey: 'eventLog.actions.ELECTION_CREATED' },
+    { value: 'ELECTION_PUBLISHED', labelKey: 'eventLog.actions.ELECTION_PUBLISHED' },
+    { value: 'ELECTION_ACTIVATED', labelKey: 'eventLog.actions.ELECTION_ACTIVATED' },
+    { value: 'ELECTION_FINISHED', labelKey: 'eventLog.actions.ELECTION_FINISHED' },
+    { value: 'ELECTION_ARCHIVED', labelKey: 'eventLog.actions.ELECTION_ARCHIVED' },
+    { value: 'VOTER_ADDED', labelKey: 'eventLog.actions.VOTER_ADDED' },
+    { value: 'VOTER_REMOVED', labelKey: 'eventLog.actions.VOTER_REMOVED' },
+    { value: 'VOTER_BULK_IMPORTED', labelKey: 'eventLog.actions.VOTER_BULK_IMPORTED' },
+    { value: 'BLOCKCHAIN_RECORD', labelKey: 'eventLog.actions.BLOCKCHAIN_RECORD' },
   ];
 
   ngOnInit(): void {
-    this.loadData();
+    this.route.queryParams.pipe(take(1)).subscribe((params) => {
+      if (params['voting_id']) {
+        this.votingIdFilter.set(params['voting_id']);
+      }
+      this.loadData();
+    });
     this.auditApi.verifyChain().subscribe({
       next: (r) => this.chainStatus.set(r),
       error: () => {},
+    });
+    this.translate.onLangChange.subscribe(() => {
+      this.cdr.markForCheck();
     });
   }
 
@@ -61,6 +80,7 @@ export class EventLogComponent implements OnInit {
         page_size: this.pageSize,
         action: this.actionFilter() || undefined,
         search: this.searchQuery() || undefined,
+        voting_id: this.votingIdFilter() || undefined,
       })
       .subscribe({
         next: (resp) => {
@@ -83,8 +103,8 @@ export class EventLogComponent implements OnInit {
     this.showActionDropdown.update((v) => !v);
   }
 
-  selectAction(value: string, label: string): void {
-    this.actionLabel.set(label);
+  selectAction(value: string, labelKey: string): void {
+    this.actionLabel.set(labelKey);
     this.actionFilter.set(value);
     this.showActionDropdown.set(false);
     this.applyFilter();
@@ -123,32 +143,29 @@ export class EventLogComponent implements OnInit {
   }
 
   formatAction(action: string): string {
-    const text = action.replace(/_/g, ' ').toLowerCase();
-    return text.charAt(0).toUpperCase() + text.slice(1);
+    const key = `eventLog.actions.${action}`;
+    return this.translate.instant(key) !== key
+      ? this.translate.instant(key)
+      : action.replace(/_/g, ' ').toLowerCase().replace(/^\w/, (c) => c.toUpperCase());
   }
 
-  formatDate(iso: string): string {
-    const date = new Date(iso);
-    const months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
-    const month = months[date.getMonth()];
-    const day = date.getDate();
-    const year = date.getFullYear();
-    const hours = date.getHours().toString().padStart(2, '0');
-    const minutes = date.getMinutes().toString().padStart(2, '0');
-    return `${month} ${day}, ${year} ${hours}:${minutes}`;
+  formatDate(iso: string, locale = this.locale()): string {
+    return new Date(iso).toLocaleString(locale, {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  }
+
+  formatDetails(details: string | null | undefined): string {
+    if (!details) return '—';
+    const match = details.match(/^(\d+) voters added$/);
+    if (match) {
+      return this.translate.instant('eventLog.votersAdded', { count: match[1] });
+    }
+    return details;
   }
 
   truncateHash(hash: string): string {

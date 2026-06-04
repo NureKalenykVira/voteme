@@ -6,16 +6,18 @@ import {
   OnInit,
   signal,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, Location } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ElectionsApiService } from '../../services/elections-api.service';
+import { ToastService } from '../../../../shared/ui/toast/toast.service';
 import { AuditorResponse, CsvImportResult, VoterResponse } from '../../models/elections.models';
 import { QRCodeComponent } from 'angularx-qrcode';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-manage-voters',
   standalone: true,
-  imports: [CommonModule, QRCodeComponent],
+  imports: [CommonModule, QRCodeComponent, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './manage-voters.component.html',
   styleUrls: ['./manage-voters.component.scss'],
@@ -23,7 +25,10 @@ import { QRCodeComponent } from 'angularx-qrcode';
 export class ManageVotersComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly location = inject(Location);
   private readonly electionsApi = inject(ElectionsApiService);
+  private readonly toast = inject(ToastService);
+  private readonly translate = inject(TranslateService);
 
   readonly electionId = this.route.snapshot.paramMap.get('id') ?? '';
 
@@ -96,7 +101,7 @@ export class ManageVotersComponent implements OnInit {
         this.loading.set(false);
       },
       error: (err) => {
-        this.error.set(err?.error?.detail ?? 'Failed to load voters');
+        this.error.set(err?.error?.detail ?? this.translate.instant('manageVoters.toastLoadFailed'));
         this.loading.set(false);
       },
     });
@@ -129,10 +134,11 @@ export class ManageVotersComponent implements OnInit {
         this.csvImportResult.set(result);
         this.csvImportLoading.set(false);
         this.csvFile.set(null);
+        this.toast.success(this.translate.instant('manageVoters.toastImported'));
         this.loadVoters();
       },
       error: (err) => {
-        this.csvImportError.set(err?.error?.detail ?? 'Import failed');
+        this.csvImportError.set(err?.error?.detail ?? this.translate.instant('manageVoters.toastImportFailed'));
         this.csvImportLoading.set(false);
       },
     });
@@ -141,6 +147,7 @@ export class ManageVotersComponent implements OnInit {
   copyCode(): void {
     navigator.clipboard.writeText(this.inviteCode()).then(() => {
       this.copiedCode.set(true);
+      this.toast.info(this.translate.instant('manageVoters.toastCopied'));
       setTimeout(() => this.copiedCode.set(false), 2000);
     });
   }
@@ -148,6 +155,7 @@ export class ManageVotersComponent implements OnInit {
   copyLink(): void {
     navigator.clipboard.writeText(this.inviteLink()).then(() => {
       this.copiedLink.set(true);
+      this.toast.info(this.translate.instant('manageVoters.toastCopied'));
       setTimeout(() => this.copiedLink.set(false), 2000);
     });
   }
@@ -159,6 +167,7 @@ export class ManageVotersComponent implements OnInit {
     a.download = 'vote-qr.png';
     a.href = canvas.toDataURL('image/png');
     a.click();
+    this.toast.info(this.translate.instant('manageVoters.toastQrDownloaded'));
   }
 
   onFileSelected(e: Event): void {
@@ -197,11 +206,12 @@ export class ManageVotersComponent implements OnInit {
     this.electionsApi.removeVoter(this.electionId, voter.id).subscribe({
       next: () => {
         this.voterToDelete.set(null);
+        this.toast.success(this.translate.instant('manageVoters.toastVoterRemoved'));
         this.loadVoters();
       },
       error: (err) => {
         this.voterToDelete.set(null);
-        this.error.set(err?.error?.detail ?? 'Failed to remove voter');
+        this.error.set(err?.error?.detail ?? this.translate.instant('manageVoters.toastVoterRemoveFailed'));
       },
     });
   }
@@ -237,10 +247,11 @@ export class ManageVotersComponent implements OnInit {
       next: () => {
         this.auditorEmail.set('');
         this.auditorLoading.set(false);
+        this.toast.success(this.translate.instant('manageVoters.toastAuditorAdded'));
         this.loadAuditors();
       },
       error: (err) => {
-        this.auditorError.set(err?.error?.detail ?? 'Failed to add auditor');
+        this.auditorError.set(err?.error?.detail ?? this.translate.instant('manageVoters.toastAuditorAddFailed'));
         this.auditorLoading.set(false);
       },
     });
@@ -260,16 +271,17 @@ export class ManageVotersComponent implements OnInit {
     this.electionsApi.removeAuditor(this.electionId, auditor.user_id).subscribe({
       next: () => {
         this.auditorToDelete.set(null);
+        this.toast.success(this.translate.instant('manageVoters.toastAuditorRemoved'));
         this.loadAuditors();
       },
       error: (err) => {
         this.auditorToDelete.set(null);
-        this.auditorError.set(err?.error?.detail ?? 'Failed to remove auditor');
+        this.auditorError.set(err?.error?.detail ?? this.translate.instant('manageVoters.toastAuditorRemoveFailed'));
       },
     });
   }
 
   backToVotings(): void {
-    this.router.navigate(['/my-votings']);
+    this.location.back();
   }
 }

@@ -2,14 +2,14 @@
 
 @if (notFound()) {
   <div class="er-page">
-    <p class="er-page__not-found">Election not found.</p>
+    <p class="er-page__not-found">{{ 'electionResults.notFound' | translate }}</p>
   </div>
 } @else if (results(); as r) {
   <!-- Hero — same structure as my-votings -->
   <div class="er-page">
     <div class="er-hero">
       <h1 class="er-hero__title">{{ r.title }}</h1>
-      <span class="er-hero__badge">{{ r.status | uppercase }}</span>
+      <span class="er-hero__badge">{{ getStatusKey(r.status) | translate }}</span>
       <span class="er-hero__logo" aria-hidden="true"></span>
     </div>
   </div>
@@ -18,14 +18,14 @@
   <div class="er-content">
     <div class="er-inner">
       <!-- RESULTS title -->
-      <h2 class="er-section-title">RESULTS</h2>
+      <h2 class="er-section-title">{{ 'electionResults.sectionTitle' | translate }}</h2>
 
       <!-- Option cards list -->
       <div class="er-list">
         @for (option of r.options; track option.option_id) {
           <div class="result-card" [ngClass]="cardClass(option, r.options)">
             <div class="result-card__body">
-              <span class="result-card__badge">{{ badgeLabel(option, r.options) }}</span>
+              <span class="result-card__badge">{{ badgeLabel(option, r.options) | translate }}</span>
               <h3 class="result-card__name">{{ option.title }}</h3>
               @if (option.description) {
                 <div class="result-card__desc-wrap">
@@ -40,7 +40,7 @@
                     class="result-card__toggle"
                     (click)="toggleExpand(option.option_id)"
                   >
-                    {{ isExpanded(option.option_id) ? 'Show less' : 'Show more' }}
+                    {{ (isExpanded(option.option_id) ? 'electionResults.showLess' : 'electionResults.showMore') | translate }}
                   </button>
                 </div>
               }
@@ -48,7 +48,7 @@
                 <div class="result-card__bar-fill" [style.width.%]="option.percentage"></div>
               </div>
               <p class="result-card__stats">
-                <span>{{ option.votes_count }} votes</span>
+                <span>{{ option.votes_count }} {{ 'electionResults.votes' | translate }}</span>
                 <span>{{ option.percentage | number: '1.0-1' }}%</span>
               </p>
             </div>
@@ -70,30 +70,30 @@
   @if (authStorage.isAuthenticated() && hasVoted()) {
     <section class="er-verify">
       <div class="er-verify__inner">
-        <span class="er-verify__pill">Your Vote</span>
-        <p class="er-verify__subtitle">Verify your ballot is recorded on-chain</p>
+        <span class="er-verify__pill">{{ 'electionResults.yourVote' | translate }}</span>
+        <p class="er-verify__subtitle">{{ 'electionResults.verifySubtitle' | translate }}</p>
 
         @if (verifyState() === 'idle') {
           <div class="er-verify__actions">
             <button type="button" class="er-verify__btn er-verify__btn--primary" (click)="verifyMyVote()">
-              Verify my vote
+              {{ 'electionResults.verifyBtn' | translate }}
               <span class="er-verify__btn-arrow" aria-hidden="true"></span>
             </button>
           </div>
         }
 
         @if (verifyState() === 'loading') {
-          <p class="er-verify__loading">Checking blockchain...</p>
+          <p class="er-verify__loading">{{ 'electionResults.verifyLoading' | translate }}</p>
         }
 
         @if (verifyState() === 'error') {
           <p class="er-verify__error">{{ verifyError() }}</p>
-          <button type="button" class="er-verify__btn er-verify__btn--ghost" (click)="verifyState.set('idle')">Try again</button>
+          <button type="button" class="er-verify__btn er-verify__btn--ghost" (click)="verifyState.set('idle')">{{ 'electionResults.verifyTryAgain' | translate }}</button>
         }
 
         @if (verifyState() === 'done' && receipt(); as rec) {
           <div class="er-verify__result">
-            <p class="er-verify__label">Commitment hash</p>
+            <p class="er-verify__label">{{ 'electionResults.commitmentHash' | translate }}</p>
             <div class="er-verify__hash-row">
               <span class="er-verify__hash">{{ truncateHash(rec.commitment) }}</span>
               <button
@@ -117,12 +117,12 @@
             </div>
             <div class="er-verify__actions">
               <button type="button" class="er-verify__btn er-verify__btn--primary" (click)="downloadReceipt()">
-                Download receipt
+                {{ 'electionResults.downloadReceipt' | translate }}
                 <span class="er-verify__export-icon" aria-hidden="true"></span>
               </button>
               @if (rec.etherscan_url) {
                 <a class="er-verify__btn er-verify__btn--primary" [href]="rec.etherscan_url" target="_blank" rel="noopener noreferrer">
-                  View on Etherscan
+                  {{ 'electionResults.viewEtherscan' | translate }}
                   <span class="er-verify__btn-arrow" aria-hidden="true"></span>
                 </a>
               }
@@ -136,10 +136,10 @@
   <!-- Blockchain verification — full-width lime block -->
   <section class="er-bc">
     <div class="er-bc__inner">
-      <span class="er-bc__pill">Blockchain verification</span>
-      <p class="er-bc__subtitle">Results recorded on Ethereum Sepolia</p>
+      <span class="er-bc__pill">{{ 'electionResults.blockchainPill' | translate }}</span>
+      <p class="er-bc__subtitle">{{ 'electionResults.blockchainSubtitle' | translate }}</p>
       @if (r.finalize_tx_hash; as hash) {
-        <p class="er-bc__label">Transaction hash</p>
+        <p class="er-bc__label">{{ 'electionResults.txHash' | translate }}</p>
         <div class="er-bc__hash-row">
           <span class="er-bc__hash">{{ truncateHash(hash) }}</span>
           <button
@@ -199,12 +199,12 @@
             target="_blank"
             rel="noopener noreferrer"
           >
-            View on Etherscan
+            {{ 'electionResults.viewEtherscan' | translate }}
             <span class="er-bc__btn-arrow" aria-hidden="true"></span>
           </a>
         </div>
       } @else {
-        <p class="er-bc__pending">Blockchain recording pending...</p>
+        <p class="er-bc__pending">{{ 'electionResults.blockchainPending' | translate }}</p>
       }
     </div>
   </section>
@@ -215,30 +215,30 @@
       <div class="er-organizer__inner">
         <div class="er-dashboard">
           <div class="er-dashboard__header">
-            <span class="er-dashboard__title-pill">Dashboard</span>
+            <span class="er-dashboard__title-pill">{{ 'electionResults.dashboardPill' | translate }}</span>
           </div>
           <div class="er-dashboard__cards">
             <!-- Participation -->
             <div class="dash-card">
-              <h4 class="dash-card__title">Participation</h4>
+              <h4 class="dash-card__title">{{ 'electionResults.cardParticipation' | translate }}</h4>
               <div class="participation-bubbles">
                 <div class="participation-bubble participation-bubble--voted">
                   <span class="participation-bubble__num">{{ r.already_voted }}</span>
-                  <span class="participation-bubble__label">Voted</span>
+                  <span class="participation-bubble__label">{{ 'electionResults.bubbleVoted' | translate }}</span>
                 </div>
                 <div class="participation-bubble participation-bubble--invited">
                   <span class="participation-bubble__num">{{ r.voters_invited }}</span>
-                  <span class="participation-bubble__label">Invited</span>
+                  <span class="participation-bubble__label">{{ 'electionResults.bubbleInvited' | translate }}</span>
                 </div>
                 <div class="participation-bubble participation-bubble--pct">
                   <span class="participation-bubble__num">{{ r.participation_pct | number:'1.0-0' }}%</span>
-                  <span class="participation-bubble__label">Voted</span>
+                  <span class="participation-bubble__label">{{ 'electionResults.bubbleVoted' | translate }}</span>
                 </div>
               </div>
             </div>
             <!-- Vote share pie -->
             <div class="dash-card">
-              <h4 class="dash-card__title">Vote share</h4>
+              <h4 class="dash-card__title">{{ 'electionResults.cardVoteShare' | translate }}</h4>
               <div class="dash-card__pie-wrap">
                 <svg class="dash-card__pie" viewBox="0 0 160 160" width="160" height="160">
                   @for (slice of getPieSlices(r.options); track slice.title) {
@@ -256,7 +256,7 @@
                 @if (hoveredPieSlice(); as s) {
                   <div class="dash-card__pie-tooltip-area">
                     <span class="dash-card__pie-tooltip-dot" [style.background]="s.color"></span>
-                    <span class="dash-card__pie-tooltip-text">{{ s.title }}: {{ s.votes }} votes</span>
+                    <span class="dash-card__pie-tooltip-text">{{ s.title }}: {{ s.votes }} {{ 'electionResults.tooltipVotes' | translate }}</span>
                   </div>
                 }
               </div>
@@ -271,7 +271,7 @@
             </div>
             @if (timeline(); as t) {
               <div class="dash-card dash-card--wide">
-                <h4 class="dash-card__title">Timeline</h4>
+                <h4 class="dash-card__title">{{ 'electionResults.cardTimeline' | translate }}</h4>
                 <p class="dash-card__timeline-range">{{ t.date_range }}</p>
                 <div class="dash-card__timeline-chart">
                   @for (bucket of t.buckets; track $index) {
@@ -288,7 +288,7 @@
           </div>
           <div class="er-dashboard__footer">
             <button type="button" class="er-dashboard__export-btn" (click)="exportResults()">
-              Export results
+              {{ 'electionResults.exportResults' | translate }}
               <span class="er-dashboard__export-icon" aria-hidden="true"></span>
             </button>
           </div>

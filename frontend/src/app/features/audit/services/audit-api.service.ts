@@ -14,6 +14,7 @@ export class AuditApiService {
     page_size: number;
     action?: string;
     search?: string;
+    voting_id?: string;
   }): Observable<AuditLogResponse> {
     let httpParams = new HttpParams()
       .set('page', params.page.toString())
@@ -24,6 +25,9 @@ export class AuditApiService {
     }
     if (params.search) {
       httpParams = httpParams.set('search', params.search);
+    }
+    if (params.voting_id) {
+      httpParams = httpParams.set('voting_id', params.voting_id);
     }
 
     return this.http.get<AuditLogResponse>(this.apiUrl, { params: httpParams });

@@ -67,6 +67,15 @@ class VoteRepository:
         )
         return int(result.scalar_one() or 0)
 
+    async def count_for_user(
+        self, session: AsyncSession, user_id: uuid.UUID
+    ) -> int:
+        result = await session.execute(
+            select(func.count()).where(Vote.user_id == user_id)
+        )
+        return int(result.scalar_one() or 0)
+
+
     async def list_for_voting_ordered(
         self, session: AsyncSession, voting_id: uuid.UUID
     ) -> list[Vote]:

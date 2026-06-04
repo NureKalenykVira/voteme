@@ -2,13 +2,15 @@ import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@ang
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { QRCodeComponent } from 'angularx-qrcode';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { ElectionsApiService } from '../../services/elections-api.service';
 import { CsvImportResult } from '../../models/elections.models';
+import { ToastService } from '../../../../shared/ui/toast/toast.service';
 
 @Component({
   selector: 'app-invite',
   standalone: true,
-  imports: [CommonModule, QRCodeComponent],
+  imports: [CommonModule, QRCodeComponent, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './invite.component.html',
   styleUrls: ['./invite.component.scss'],
@@ -17,6 +19,8 @@ export class InviteComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly electionsApi = inject(ElectionsApiService);
+  private readonly toast = inject(ToastService);
+  private readonly translate = inject(TranslateService);
 
   readonly electionId = this.route.snapshot.paramMap.get('id') ?? '';
   readonly inviteCode = signal<string>('');
@@ -46,6 +50,7 @@ export class InviteComponent implements OnInit {
     navigator.clipboard.writeText(this.inviteCode()).then(() => {
       this.copiedCode.set(true);
       setTimeout(() => this.copiedCode.set(false), 2000);
+      this.toast.info(this.translate.instant('invite.toastCopied'));
     });
   }
 
@@ -53,6 +58,7 @@ export class InviteComponent implements OnInit {
     navigator.clipboard.writeText(this.inviteLink()).then(() => {
       this.copiedLink.set(true);
       setTimeout(() => this.copiedLink.set(false), 2000);
+      this.toast.info(this.translate.instant('invite.toastCopied'));
     });
   }
 
@@ -63,6 +69,7 @@ export class InviteComponent implements OnInit {
     link.download = `vote-qr-${this.electionId}.png`;
     link.href = canvas.toDataURL('image/png');
     link.click();
+    this.toast.info(this.translate.instant('invite.toastQrDownloaded'));
   }
 
   onFileSelected(event: Event): void {
@@ -110,9 +117,10 @@ export class InviteComponent implements OnInit {
         this.csvImportResult.set(result);
         this.csvImportLoading.set(false);
         this.csvFile.set(null);
+        this.toast.success(this.translate.instant('invite.toastImported'));
       },
       error: (err) => {
-        this.csvImportError.set(err?.error?.detail ?? 'Import failed');
+        this.csvImportError.set(err?.error?.detail ?? this.translate.instant('invite.toastImportFailed'));
         this.csvImportLoading.set(false);
       },
     });

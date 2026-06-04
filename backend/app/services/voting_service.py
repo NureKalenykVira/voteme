@@ -6,6 +6,7 @@ import re
 import secrets
 import uuid
 from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 from typing import Optional
 
 _EMAIL_RE = re.compile(r'^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$')
@@ -161,7 +162,9 @@ class VotingService:
             round(already_voted / voters_invited * 100, 2) if voters_invited > 0 else 0.0
         )
 
-        is_organizer = actor is not None and actor.id == voting.created_by
+        is_organizer = actor is not None and (
+            actor.id == voting.created_by or actor.role == Role.global_admin
+        )
 
         organizer = await self._users.get_by_id(session, voting.created_by)
         organizer_name: Optional[str] = None
@@ -211,6 +214,15 @@ class VotingService:
         if span_end.tzinfo is None:
             span_end = span_end.replace(tzinfo=timezone.utc)
 
+        # Convert to local tz before any alignment/label formatting
+        local_tz = ZoneInfo(settings.app_timezone)
+        span_start = span_start.astimezone(local_tz)
+        span_end = span_end.astimezone(local_tz)
+        timestamps = [
+            (ts if ts.tzinfo is not None else ts.replace(tzinfo=timezone.utc)).astimezone(local_tz)
+            for ts in timestamps
+        ]
+
         total_seconds = (span_end - span_start).total_seconds()
 
         if total_seconds < 3600:
@@ -258,7 +270,7 @@ class VotingService:
 
             count = sum(
                 1 for ts in timestamps
-                if cursor <= (ts if ts.tzinfo is not None else ts.replace(tzinfo=timezone.utc)) < next_cursor
+                if cursor <= ts < next_cursor
             )
             buckets.append(TimelineBucket(label=label, votes=count))
             cursor = next_cursor
@@ -1105,6 +1117,9 @@ class VotingService:
             },
         )
 
+        if event == VotingEvent.start_tick and voting.status == VotingStatus.active:
+            _fire_election_started_emails(voting.id)
+
         if event == VotingEvent.end_tick and voting.status == VotingStatus.finished:
             _fire_election_finalized(voting.id)
             _tally_votes(voting.id)
@@ -1238,6 +1253,41 @@ def _fire_election_finalized(voting_id: uuid.UUID) -> None:
         )
 
 
+def _fire_election_started_emails(voting_id: uuid.UUID) -> None:
+    async def _runner() -> None:
+        try:
+            async with AsyncSessionLocal() as session:
+                voting = await session.get(Voting, voting_id)
+                if voting is None:
+                    return
+                join_link = f"{settings.frontend_url}/join/{voting.invitation_code}"
+                # Get all voters on the whitelist
+                result = await session.execute(
+                    select(User.email)
+                    .join(VoterList, VoterList.user_id == User.id)
+                    .where(VoterList.voting_id == voting_id)
+                )
+                for (voter_email,) in result.all():
+                    _fire_and_forget_email(
+                        _email_service.send_election_started_email(
+                            voter_email, voting.title, join_link
+                        )
+                    )
+        except Exception as exc:
+            logger.error(
+                "election-started email task failed for voting_id=%s: %s",
+                voting_id, exc, exc_info=True,
+            )
+
+    try:
+        asyncio.get_running_loop().create_task(_runner())
+    except RuntimeError:
+        logger.warning(
+            "No running event loop; skipping election-started emails for voting %s",
+            voting_id,
+        )
+
+
 def _tally_votes(voting_id: uuid.UUID) -> None:
     """
     Fire-and-forget background task that counts votes per ballot option and
@@ -1267,6 +1317,38 @@ def _tally_votes(voting_id: uuid.UUID) -> None:
                     data={"voting_id": str(voting_id), "options_count": len(counts)},
                 )
                 await session.commit()
+
+                # --- results email notification (fire-and-forget) ---
+                try:
+                    voting_row = await session.get(Voting, voting_id)
+                    if voting_row is not None:
+                        results_url = f"{settings.frontend_url}/elections/{voting_id}/results"
+                        organizer = await UserRepository().get_by_id(session, voting_row.created_by)
+                        if organizer is not None:
+                            _fire_and_forget_email(
+                                _email_service.send_results_email(
+                                    organizer.email, voting_row.title, results_url
+                                )
+                            )
+                        voter_emails_result = await session.execute(
+                            select(User.email)
+                            .join(Vote, Vote.user_id == User.id)
+                            .where(Vote.voting_id == voting_id)
+                        )
+                        for (voter_email,) in voter_emails_result.all():
+                            _fire_and_forget_email(
+                                _email_service.send_results_email(
+                                    voter_email, voting_row.title, results_url
+                                )
+                            )
+                except Exception as email_exc:
+                    logger.error(
+                        "Failed to schedule results emails for voting_id=%s: %s",
+                        voting_id,
+                        email_exc,
+                    )
+                # --- end results email ---
+
                 logger.info(
                     "vote tally complete for voting_id=%s: %d options counted",
                     voting_id,

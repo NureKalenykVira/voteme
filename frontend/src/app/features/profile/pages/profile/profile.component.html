@@ -4,24 +4,24 @@
   <div class="profile-card">
     <!-- Header -->
     <div class="card-header">
-      <app-profile-header-badge label="My profile" variant="purple" />
+      <app-profile-header-badge [label]="'profile.myProfile' | translate" variant="purple" />
       <button class="pill-btn purple pill-btn--with-icon" (click)="onGoHome()">
-        Go home <img src="/assets/auth/arrow_right.svg" class="btn-icon" alt="" />
+        {{ 'profile.goBack' | translate }} <img src="/assets/auth/arrow_right.svg" class="btn-icon" alt="" />
       </button>
     </div>
 
     <!-- Loading state -->
-    <div *ngIf="state() === 'loading'" class="loading">Loading...</div>
+    <div *ngIf="state() === 'loading'" class="loading">{{ 'profile.loading' | translate }}</div>
 
     <!-- Error state -->
-    <div *ngIf="state() === 'error'" class="error-msg">Could not load profile.</div>
+    <div *ngIf="state() === 'error'" class="error-msg">{{ 'profile.errorLoad' | translate }}</div>
 
     <!-- Ready state -->
     <ng-container *ngIf="state() === 'ready'">
       <div class="profile-section">
         <!-- Avatar col -->
         <div class="avatar-col">
-          <span class="field-label">Profile picture</span>
+          <span class="field-label">{{ 'profile.profilePicture' | translate }}</span>
           <app-profile-avatar
             [previewUrl]="avatarPreview()"
             [persistedUrl]="resolvedAvatarUrl()"
@@ -34,24 +34,24 @@
         <div class="form-grid">
           <!-- Full name -->
           <div class="field-group">
-            <label class="field-label">Full Name</label>
+            <label class="field-label">{{ 'profile.fullName' | translate }}</label>
             <input
               class="profile-input"
               type="text"
               [formControl]="fullNameControl"
-              placeholder="Your name"
+              [placeholder]="'profile.namePlaceholder' | translate"
             />
           </div>
 
           <!-- Email -->
           <div class="field-group">
-            <label class="field-label">Email</label>
+            <label class="field-label">{{ 'profile.email' | translate }}</label>
             <input class="profile-input" type="email" [value]="user()?.email ?? ''" readonly />
           </div>
 
           <!-- Password -->
           <div class="field-group">
-            <label class="field-label">Password</label>
+            <label class="field-label">{{ 'profile.password' | translate }}</label>
             <input
               class="profile-input"
               type="password"
@@ -59,14 +59,14 @@
               readonly
             />
             <span class="forgot-hint">
-              Don't remember your password?
-              <a class="forgot-link" (click)="onForgotPassword()">Click here to reset</a>
+              {{ 'profile.forgotHint' | translate }}
+              <a class="forgot-link" (click)="onForgotPassword()">{{ 'profile.resetLink' | translate }}</a>
             </span>
           </div>
 
           <!-- Role -->
           <div class="field-group">
-            <label class="field-label">Role</label>
+            <label class="field-label">{{ 'profile.role' | translate }}</label>
             <app-role-badge [role]="user()?.role ?? ''" />
           </div>
         </div>
@@ -75,17 +75,20 @@
       <!-- Save row -->
       <div class="save-row">
         <button class="pill-btn purple save-btn pill-btn--with-icon" (click)="onSaveChanges()">
-          Save changes <img src="/assets/auth/save.svg" class="btn-icon" alt="" />
+          {{ 'profile.saveChanges' | translate }} <img src="/assets/auth/save.svg" class="btn-icon" alt="" />
         </button>
       </div>
 
       <!-- Activity section -->
       <div class="activity-section">
-        <app-profile-header-badge label="My activity" variant="lime" />
+        <app-profile-header-badge [label]="'profile.myActivity' | translate" variant="lime" />
         <div class="activity-rows">
-          <app-activity-stat-row label="Votings participated" [value]="0" />
+          <app-activity-stat-row
+            [label]="'profile.votingsParticipated' | translate"
+            [value]="user()?.votes_cast_count ?? 0"
+          />
           <div class="activity-links">
-            <app-activity-link-button label="View my votings" routerLink="/my-votings" />
+            <app-activity-link-button [label]="'profile.viewMyVotings' | translate" routerLink="/my-votings" />
             <app-activity-link-button
               *ngIf="
                 user()?.role === 'organizer' ||
@@ -93,7 +96,7 @@
                 user()?.role === 'auditor' ||
                 user()?.is_election_auditor
               "
-              label="View event log"
+              [label]="'profile.viewEventLog' | translate"
               routerLink="/event-log"
             />
           </div>
@@ -101,24 +104,24 @@
         <div class="action-row">
           <!-- Default: show Delete account button -->
           <ng-container *ngIf="!confirmDelete()">
-            <button class="pill-btn red" (click)="onDeleteAccount()">Delete account</button>
+            <button class="pill-btn red" (click)="onDeleteAccount()">{{ 'profile.deleteAccount' | translate }}</button>
           </ng-container>
 
           <!-- Confirmation state -->
           <ng-container *ngIf="confirmDelete()">
             <div class="confirm-inline">
-              <span class="delete-confirm-text">Are you sure? This cannot be undone.</span>
+              <span class="delete-confirm-text">{{ 'profile.deleteConfirm' | translate }}</span>
               <button class="pill-btn red" (click)="onConfirmDelete()" [disabled]="deleting()">
-                {{ deleting() ? 'Deleting...' : 'Yes, delete' }}
+                {{ (deleting() ? 'profile.deleting' : 'profile.yesDelete') | translate }}
               </button>
               <button class="pill-btn purple" (click)="onCancelDelete()" [disabled]="deleting()">
-                Cancel
+                {{ 'profile.cancel' | translate }}
               </button>
             </div>
           </ng-container>
 
           <button class="pill-btn purple pill-btn--with-icon" (click)="onLogout()">
-            Log out <img src="/assets/auth/arrow_right.svg" class="btn-icon" alt="" />
+            {{ 'profile.logOut' | translate }} <img src="/assets/auth/arrow_right.svg" class="btn-icon" alt="" />
           </button>
         </div>
       </div>
@@ -128,17 +131,17 @@
   <!-- Reset password modal -->
   <div class="reset-modal-overlay" *ngIf="showResetModal()" (click)="onCancelReset()">
     <div class="reset-modal-card" (click)="$event.stopPropagation()">
-      <h2 class="reset-modal-title">Reset password</h2>
-      <p class="reset-modal-subtitle">We'll send a reset link to</p>
+      <h2 class="reset-modal-title">{{ 'profile.resetModal.title' | translate }}</h2>
+      <p class="reset-modal-subtitle">{{ 'profile.resetModal.subtitle' | translate }}</p>
       <div class="reset-modal-email">{{ user()?.email }}</div>
       <button
         class="reset-btn reset-btn--filled"
         (click)="onSendResetLink()"
         [disabled]="resetLinkSending()"
       >
-        {{ resetLinkSending() ? 'Sending...' : 'Send reset link' }}
+        {{ (resetLinkSending() ? 'profile.resetModal.sending' : 'profile.resetModal.sendLink') | translate }}
       </button>
-      <button class="reset-btn reset-btn--outline" (click)="onCancelReset()">Cancel</button>
+      <button class="reset-btn reset-btn--outline" (click)="onCancelReset()">{{ 'profile.resetModal.cancel' | translate }}</button>
     </div>
   </div>
 </div>

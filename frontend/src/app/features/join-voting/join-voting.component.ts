@@ -2,12 +2,13 @@ import { ChangeDetectionStrategy, Component, inject, signal, ViewEncapsulation }
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormControl } from '@angular/forms';
 import { Router } from '@angular/router';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { AuthLayoutComponent, DecoWord } from '../../shared/ui/auth-layout/auth-layout.component';
 
 @Component({
   selector: 'app-join-voting',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, AuthLayoutComponent],
+  imports: [CommonModule, ReactiveFormsModule, AuthLayoutComponent, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   templateUrl: './join-voting.component.html',
@@ -15,6 +16,7 @@ import { AuthLayoutComponent, DecoWord } from '../../shared/ui/auth-layout/auth-
 })
 export class JoinVotingComponent {
   private readonly router = inject(Router);
+  private readonly translate = inject(TranslateService);
 
   readonly vector = '/assets/auth/login_vector.svg';
   readonly decoWords: DecoWord[] = [
@@ -30,7 +32,7 @@ export class JoinVotingComponent {
   joinByCode(): void {
     const code = this.codeCtrl.value?.trim() ?? '';
     if (!code) {
-      this.codeError.set('Please enter a code.');
+      this.codeError.set(this.translate.instant('join.errorNoCode'));
       return;
     }
     this.codeError.set('');
@@ -40,7 +42,7 @@ export class JoinVotingComponent {
   joinByLink(): void {
     const raw = this.linkCtrl.value?.trim() ?? '';
     if (!raw) {
-      this.linkError.set('Please paste a link.');
+      this.linkError.set(this.translate.instant('join.errorNoLink'));
       return;
     }
     this.linkError.set('');

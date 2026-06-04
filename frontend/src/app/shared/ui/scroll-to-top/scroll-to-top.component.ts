@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   HostListener,
+  Input,
   signal,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -15,6 +16,7 @@ import { CommonModule } from '@angular/common';
   styleUrls: ['./scroll-to-top.component.scss'],
 })
 export class ScrollToTopComponent {
+  @Input() iconColor = '#ffffff';
   readonly isVisible = signal(false);
 
   @HostListener('window:scroll')

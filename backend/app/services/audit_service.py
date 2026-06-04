@@ -36,6 +36,7 @@ async def get_audit_log(
     page_size: int,
     action: Optional[str],
     search: Optional[str],
+    voting_id_filter: Optional[str] = None,
 ) -> AuditLogResponse:
     voting_ids: Optional[list[uuid.UUID]]
 
@@ -52,7 +53,11 @@ async def get_audit_log(
             )
         voting_ids = auditor_ids
     elif actor.role == Role.global_admin:
-        voting_ids = None
+        # Admin can optionally scope the log to a single election.
+        if voting_id_filter is not None:
+            voting_ids = [uuid.UUID(voting_id_filter)]
+        else:
+            voting_ids = None
     elif actor.role == Role.auditor:
         # auditor: scope to elections they are explicitly assigned to.
         # An empty list yields no entries (list_entries treats [] as empty),

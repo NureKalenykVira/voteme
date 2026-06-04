@@ -8,12 +8,14 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { PublicHeaderComponent } from '../../shared/layout/public-header/public-header.component';
 import { PublicFooterComponent } from '../../shared/layout/public-footer/public-footer.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { ElectionsApiService } from '../elections/services/elections-api.service';
 import { BallotOptionResponse, VotingJoinResponse } from '../elections/models/elections.models';
 import { AuthStorageService } from '../../core/services/auth-storage.service';
+import { LanguageService } from '../../core/services/language.service';
 import { environment } from '../../../environments/environment';
 
 type ButtonState =
@@ -27,7 +29,7 @@ type ButtonState =
 @Component({
   selector: 'app-voting-detail',
   standalone: true,
-  imports: [CommonModule, PublicHeaderComponent, PublicFooterComponent, ButtonComponent],
+  imports: [CommonModule, TranslatePipe, PublicHeaderComponent, PublicFooterComponent, ButtonComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './voting-detail.component.html',
   styleUrls: ['./voting-detail.component.scss'],
@@ -36,6 +38,8 @@ export class VotingDetailComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly electionsApi = inject(ElectionsApiService);
+  private readonly translate = inject(TranslateService);
+  private readonly language = inject(LanguageService);
   readonly authStorage = inject(AuthStorageService);
 
   readonly election = signal<VotingJoinResponse | null>(null);
@@ -123,13 +127,26 @@ export class VotingDetailComponent implements OnInit, OnDestroy {
   }
 
   formatDate(dateStr: string): string {
-    return new Date(dateStr).toLocaleString('en-US', {
+    const locale = this.language.currentLang() === 'uk' ? 'uk-UA' : 'en-US';
+    return new Date(dateStr).toLocaleString(locale, {
       month: 'short',
       day: 'numeric',
       year: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
     });
+  }
+
+  getStatusKey(status: string): string {
+    const map: Record<string, string> = {
+      active: 'votingDetail.statusActive',
+      published: 'votingDetail.statusPublished',
+      draft: 'votingDetail.statusDraft',
+      finished: 'votingDetail.statusFinished',
+      archived: 'votingDetail.statusArchived',
+      concluded: 'votingDetail.statusFinished',
+    };
+    return map[status] ?? status.toUpperCase();
   }
 
   onPrimaryAction(): void {

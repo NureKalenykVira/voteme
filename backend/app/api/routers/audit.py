@@ -34,6 +34,7 @@ async def get_audit_log_endpoint(
     page_size: int = Query(20, ge=1, le=100),
     action: Optional[str] = Query(None),
     search: Optional[str] = Query(None),
+    voting_id: Optional[str] = Query(None),
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_db),
 ) -> AuditLogResponse:
@@ -44,6 +45,7 @@ async def get_audit_log_endpoint(
         page_size=page_size,
         action=action,
         search=search,
+        voting_id_filter=voting_id,
     )
 
 

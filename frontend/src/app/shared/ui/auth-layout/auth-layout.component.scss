@@ -1,3 +1,5 @@
+@use '../../../../styles/mixins' as mx;
+
 .auth-page {
   min-height: 100vh;
   max-height: 100vh;
@@ -53,4 +55,19 @@
   height: auto;
   left: -8%;
   top: -25%;
+}
+
+@include mx.respond-below(mx.$bp-sm) {
+  .vector {
+    height: 100%;
+    top: 0;
+    left: -40%;
+  }
+
+  .vector-login {
+    width: auto;
+    height: 100%;
+    top: 0;
+    left: -35%;
+  }
 }

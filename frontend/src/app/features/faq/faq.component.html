@@ -1,0 +1,66 @@
+<ui-public-header />
+
+<div class="faq">
+  <div class="faq__hero">
+    <h1 class="faq__hero-title">FAQ</h1>
+    <span class="faq__hero-logo" aria-hidden="true"></span>
+  </div>
+</div>
+
+<div class="faq__content">
+  <div class="faq__inner">
+    <div class="faq__groups">
+      @for (group of groups; track group.topic; let gi = $index) {
+        <section class="faq__group">
+          <span class="faq__group-badge">{{ group.topic | translate }}</span>
+
+          <div class="faq__list">
+            @for (item of group.items; track item.question; let ii = $index) {
+              <div
+                class="faq__item"
+                [class.faq__item--open]="isOpen(group.topic + ii)"
+                (click)="toggle(group.topic + ii)"
+              >
+                <button
+                  class="faq__question"
+                  type="button"
+                  [attr.aria-expanded]="isOpen(group.topic + ii)"
+                >
+                  <span class="faq__question-text">{{ item.question | translate }}</span>
+                  <span class="faq__chevron" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path
+                        d="M6 9l6 6 6-6"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                    </svg>
+                  </span>
+                </button>
+
+                <div class="faq__answer" [class.faq__answer--open]="isOpen(group.topic + ii)">
+                  <div class="faq__answer-inner">
+                    <p class="faq__answer-text">{{ item.answer | translate }}</p>
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        </section>
+      }
+    </div>
+
+    <div class="faq__cta-block">
+      <p class="faq__cta-text">{{ 'faq.cta.text' | translate }}</p>
+      <a href="https://mail.google.com/mail/?view=cm&to=votemeinfonsupport@gmail.com&su=VoteMe+Support" target="_blank" rel="noopener noreferrer" class="faq__cta-btn">
+        {{ 'faq.cta.btn' | translate }}
+        <span class="faq__cta-icon"></span>
+      </a>
+    </div>
+  </div>
+</div>
+
+<ui-public-footer />
+<app-scroll-to-top iconColor="#c8f135" />

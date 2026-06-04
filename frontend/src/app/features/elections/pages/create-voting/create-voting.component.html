@@ -2,33 +2,33 @@
   <img src="/assets/vectors/create_vector.svg" class="create-page__bg" alt="" aria-hidden="true" />
 
   <div class="create-page__card">
-    <h1 class="create-page__title">{{ isEditMode ? 'Edit Voting' : 'Create Voting' }}</h1>
+    <h1 class="create-page__title">{{ (isEditMode ? 'createVoting.titleEdit' : 'createVoting.titleCreate') | translate }}</h1>
 
     <form [formGroup]="form" novalidate class="create-page__form">
       <div class="create-page__body">
         <!-- LEFT PANEL -->
         <div class="create-page__left">
           <ui-text-input
-            label="Title *"
+            [label]="'createVoting.fieldTitle' | translate"
             id="voting-title"
             formControlName="title"
-            placeholder="Voting title"
+            [placeholder]="'createVoting.titlePlaceholder' | translate"
           />
 
           <div class="create-page__field">
-            <label class="create-page__label" for="voting-desc">Description</label>
+            <label class="create-page__label" for="voting-desc">{{ 'createVoting.fieldDesc' | translate }}</label>
             <textarea
               id="voting-desc"
               class="create-page__textarea"
               formControlName="description"
-              placeholder="Optional description"
+              [placeholder]="'createVoting.descPlaceholder' | translate"
               rows="4"
             ></textarea>
           </div>
 
           <div class="create-page__field">
             <label class="create-page__label"
-              >Start date &amp; time <span class="create-page__required">*</span></label
+              >{{ 'createVoting.startDateTime' | translate }} <span class="create-page__required">*</span></label
             >
             <div class="create-page__datetime">
               <ui-time-picker
@@ -52,13 +52,13 @@
               form.hasError('pastStartDatetime') &&
               (form.get('startDate')?.touched || form.get('startTime')?.touched)
             ) {
-              <span class="create-page__datetime-error">Start date/time cannot be in the past</span>
+              <span class="create-page__datetime-error">{{ 'createVoting.pastStartError' | translate }}</span>
             }
           </div>
 
           <div class="create-page__field">
             <label class="create-page__label"
-              >End date &amp; time <span class="create-page__required">*</span></label
+              >{{ 'createVoting.endDateTime' | translate }} <span class="create-page__required">*</span></label
             >
             <div class="create-page__datetime">
               <ui-time-picker
@@ -82,20 +82,25 @@
               form.hasError('pastEndDatetime') &&
               (form.get('endDate')?.touched || form.get('endTime')?.touched)
             ) {
-              <span class="create-page__datetime-error">End date/time cannot be in the past</span>
+              <span class="create-page__datetime-error">{{ 'createVoting.pastEndError' | translate }}</span>
             }
           </div>
 
-          <ui-checkbox formControlName="anonymous" label="Anonymous voting" id="anonymous" />
+          <ui-checkbox formControlName="anonymous" [label]="'createVoting.anonymous' | translate" id="anonymous" />
 
-          <button *ngIf="isEditMode" type="button" class="create-page__manage-btn" (click)="manageVoters()">
-            Manage voters
+          <button
+            *ngIf="isEditMode"
+            type="button"
+            class="create-page__manage-btn"
+            (click)="manageVoters()"
+          >
+            {{ 'createVoting.manageVoters' | translate }}
           </button>
         </div>
 
         <!-- RIGHT PANEL -->
         <div class="create-page__right">
-          <p class="create-page__options-label">Options</p>
+          <p class="create-page__options-label">{{ 'createVoting.options' | translate }}</p>
 
           <div class="create-page__options-scroll">
             <app-voting-option-card
@@ -110,7 +115,7 @@
           </div>
 
           <button type="button" class="create-page__add-btn" (click)="addOption()">
-            Add one more
+            {{ 'createVoting.addOption' | translate }}
             <img
               src="/assets/icons/plus.svg"
               class="create-page__add-icon"
@@ -125,32 +130,45 @@
       <div class="create-page__actions">
         <button type="button" class="create-page__btn create-page__btn--cancel" (click)="cancel()">
           <span class="create-page__btn-icon create-page__btn-icon--left" aria-hidden="true"></span>
-          Cancel
+          {{ 'createVoting.cancel' | translate }}
         </button>
 
-        <button
-          type="button"
-          class="create-page__btn create-page__btn--draft"
-          (click)="onSubmit('draft')"
-        >
-          Save as draft
-          <span
-            class="create-page__btn-icon create-page__btn-icon--right"
-            aria-hidden="true"
-          ></span>
-        </button>
-
-        <button
-          type="button"
-          class="create-page__btn create-page__btn--publish"
-          (click)="onSubmit('published')"
-        >
-          Publish
-          <span
-            class="create-page__btn-icon create-page__btn-icon--right"
-            aria-hidden="true"
-          ></span>
-        </button>
+        @if (!isEditMode || electionStatus() === 'draft') {
+          <button
+            type="button"
+            class="create-page__btn create-page__btn--draft"
+            (click)="onSubmit('draft')"
+          >
+            {{ 'createVoting.saveAsDraft' | translate }}
+            <span
+              class="create-page__btn-icon create-page__btn-icon--right"
+              aria-hidden="true"
+            ></span>
+          </button>
+          <button
+            type="button"
+            class="create-page__btn create-page__btn--publish"
+            (click)="onSubmit('published')"
+          >
+            {{ 'createVoting.publish' | translate }}
+            <span
+              class="create-page__btn-icon create-page__btn-icon--right"
+              aria-hidden="true"
+            ></span>
+          </button>
+        } @else {
+          <button
+            type="button"
+            class="create-page__btn create-page__btn--publish"
+            (click)="onSubmit('published')"
+          >
+            {{ 'createVoting.saveChanges' | translate }}
+            <span
+              class="create-page__btn-icon create-page__btn-icon--right"
+              aria-hidden="true"
+            ></span>
+          </button>
+        }
       </div>
     </form>
   </div>

@@ -5,6 +5,11 @@
   padding: 20px;
   height: 70vh;
 
+  @include mx.respond-below(mx.$bp-sm) {
+    height: auto;
+    padding: 12px;
+  }
+
   &__grid {
     display: grid;
     grid-template-columns: 2fr 1fr 1fr;
@@ -21,6 +26,8 @@
 
     @include mx.respond-below(mx.$bp-sm) {
       grid-template-columns: 1fr;
+      height: auto;
+      gap: 12px;
     }
   }
 }
@@ -37,9 +44,16 @@
   font-family: inherit;
   border-radius: var(--vm-radius-pill);
   text-decoration: none;
-  transition: background 0.15s, border-color 0.15s;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
   white-space: nowrap;
   cursor: pointer;
+
+  @include mx.respond-below(mx.$bp-sm) {
+    font-size: 16px;
+    padding: 12px 20px;
+  }
 
   &--primary {
     background: var(--vm-lime);
@@ -83,6 +97,11 @@
     justify-content: flex-end;
     height: 100%;
     min-height: 400px;
+
+    @include mx.respond-below(mx.$bp-sm) {
+      min-height: auto;
+      padding: 24px;
+    }
   }
 
   &__headline {
@@ -93,6 +112,10 @@
     line-height: 1.05;
     letter-spacing: -1px;
     margin: 0 0 32px;
+
+    @include mx.respond-below(mx.$bp-sm) {
+      font-size: clamp(28px, 8vw, 40px);
+    }
 
     &--white {
       color: var(--vm-text-white);
@@ -150,20 +173,32 @@
   @include mx.respond-below(mx.$bp-sm) {
     grid-column: 1;
     grid-row: auto;
-    min-height: 200px;
+    min-height: 160px;
   }
 
-  &__placeholder {
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  outline: 5px solid var(--vm-purple);
+
+  &__photo {
+    margin: -32px;
+    width: calc(100% + 64px);
+    height: calc(100% + 64px);
+    overflow: hidden;
+  }
+
+  &__img {
+    width: 100%;
     height: 100%;
-    min-height: 300px;
-    opacity: 0.3;
+    object-fit: cover;
+    object-position: 55% center;
+    display: block;
   }
 
-  &__icon {
-    font-size: 80px;
+  @include mx.respond-below(mx.$bp-sm) {
+    &__photo {
+      margin: -32px;
+      width: calc(100% + 64px);
+      height: calc(160px + 64px);
+    }
   }
 }
 
@@ -191,6 +226,10 @@
     justify-content: flex-end;
     min-height: 160px;
     padding-top: 125px;
+
+    @include mx.respond-below(mx.$bp-sm) {
+      padding-top: 80px;
+    }
   }
 
   &__icon {
@@ -201,6 +240,11 @@
     width: 148px;
     height: 148px;
     object-fit: contain;
+
+    @include mx.respond-below(mx.$bp-sm) {
+      width: 80px;
+      height: 80px;
+    }
   }
 
   &__text {

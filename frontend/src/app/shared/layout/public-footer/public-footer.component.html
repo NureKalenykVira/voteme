@@ -8,12 +8,12 @@
 
         <div class="footer__cta-group">
           <a routerLink="/elections/create" class="footer__cta footer__cta--purple">
-            <span>Create Voting</span>
+            <span>{{ 'footer.createVoting' | translate }}</span>
             <img src="/assets/auth/arrow_right.svg" class="footer__cta-arrow" alt="" />
           </a>
 
           <a routerLink="/join" class="footer__cta footer__cta--lime">
-            <span>Cast a Vote</span>
+            <span>{{ 'footer.castVote' | translate }}</span>
             <img
               src="/assets/auth/arrow_right.svg"
               class="footer__cta-arrow footer__cta-arrow--dark"
@@ -24,21 +24,21 @@
       </div>
 
       <nav class="footer__col footer__col--nav">
-        <h3 class="footer__heading footer__heading--nav">NAVIGATION</h3>
-        <a routerLink="/home" class="footer__link">Home</a>
-        <a routerLink="/home" class="footer__link">How it works</a>
-        <a routerLink="/faq" class="footer__link">FAQ</a>
+        <h3 class="footer__heading footer__heading--nav">{{ 'footer.nav.heading' | translate }}</h3>
+        <a routerLink="/home" class="footer__link">{{ 'footer.nav.home' | translate }}</a>
+        <a routerLink="/home" fragment="how-it-works" class="footer__link">{{ 'footer.nav.howItWorks' | translate }}</a>
+        <a routerLink="/faq" class="footer__link">{{ 'footer.nav.faq' | translate }}</a>
       </nav>
 
       <nav class="footer__col footer__col--legal">
-        <h3 class="footer__heading footer__heading--legal">LEGAL</h3>
-        <a routerLink="/privacy" class="footer__link">Privacy Policy</a>
-        <a routerLink="/terms" class="footer__link">Terms of Use</a>
+        <h3 class="footer__heading footer__heading--legal">{{ 'footer.legal.heading' | translate }}</h3>
+        <a routerLink="/privacy" class="footer__link">{{ 'footer.legal.privacy' | translate }}</a>
+        <a routerLink="/terms" class="footer__link">{{ 'footer.legal.terms' | translate }}</a>
       </nav>
     </div>
 
     <div class="footer__bottom">
-      <span class="footer__copy">&copy; 2026 VoteMe. All rights reserved.</span>
+      <span class="footer__copy">{{ 'footer.copy' | translate }}</span>
     </div>
   </div>
 </footer>

@@ -1,0 +1,22 @@
+@if (modal.activeModal(); as type) {
+  <div class="gm-overlay" (click)="modal.close()">
+    <div class="gm-box" (click)="$event.stopPropagation()">
+      <div class="gm-header">
+        @if (type === 'session-expired') {
+          <span>{{ 'globalModal.sessionExpiredTitle' | translate }}</span>
+        } @else {
+          <span>{{ 'globalModal.accessDeniedTitle' | translate }}</span>
+        }
+      </div>
+      <div class="gm-body">
+        @if (type === 'session-expired') {
+          <p>{{ 'globalModal.sessionExpiredMsg' | translate }}</p>
+          <button class="gm-btn" (click)="onLogin()">{{ 'globalModal.login' | translate }}</button>
+        } @else {
+          <p>{{ 'globalModal.accessDeniedMsg' | translate }}</p>
+          <button class="gm-btn" (click)="onGoHome()">{{ 'globalModal.goBack' | translate }}</button>
+        }
+      </div>
+    </div>
+  </div>
+}

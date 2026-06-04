@@ -1,0 +1,149 @@
+<div class="ast-page">
+  <h1 class="ast-title">{{ 'admin.settings.title' | translate }}</h1>
+
+  <form [formGroup]="settingsForm" (ngSubmit)="saveSettings()" class="ast-form">
+    <div class="ast-section">
+      <h2 class="ast-section-title">{{ 'admin.settings.platformSection' | translate }}</h2>
+
+      <div class="ast-row">
+        <span class="ast-label">{{ 'admin.settings.maxFreeVotings' | translate }}</span>
+        <div class="ast-spinner">
+          <input
+            type="number"
+            class="ast-spinner__input"
+            formControlName="max_free_votings_per_month"
+            min="0"
+          />
+          <div class="ast-spinner__arrows">
+            <button
+              type="button"
+              class="ast-spinner__btn"
+              (click)="stepField('max_free_votings_per_month', 1)"
+            >
+              <span class="ast-spinner__icon ast-spinner__icon--up"></span>
+            </button>
+            <button
+              type="button"
+              class="ast-spinner__btn"
+              (click)="stepField('max_free_votings_per_month', -1)"
+            >
+              <span class="ast-spinner__icon ast-spinner__icon--down"></span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="ast-row">
+        <span class="ast-label">{{ 'admin.settings.sessionTimeout' | translate }}</span>
+        <div class="ast-spinner">
+          <input
+            type="number"
+            class="ast-spinner__input"
+            formControlName="session_timeout_minutes"
+            min="1"
+          />
+          <div class="ast-spinner__arrows">
+            <button
+              type="button"
+              class="ast-spinner__btn"
+              (click)="stepField('session_timeout_minutes', 60)"
+            >
+              <span class="ast-spinner__icon ast-spinner__icon--up"></span>
+            </button>
+            <button
+              type="button"
+              class="ast-spinner__btn"
+              (click)="stepField('session_timeout_minutes', -60)"
+            >
+              <span class="ast-spinner__icon ast-spinner__icon--down"></span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="ast-row">
+        <span class="ast-label">{{ 'admin.settings.requireEmailVerification' | translate }}</span>
+        <label class="ast-toggle">
+          <input type="checkbox" formControlName="require_email_verification" />
+          <span class="ast-toggle__track">
+            <span class="ast-toggle__thumb"></span>
+          </span>
+        </label>
+      </div>
+
+      <div class="ast-row">
+        <span class="ast-label">{{ 'admin.settings.maintenanceMode' | translate }}</span>
+        <label class="ast-toggle">
+          <input type="checkbox" formControlName="maintenance_mode" />
+          <span class="ast-toggle__track">
+            <span class="ast-toggle__thumb"></span>
+          </span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Backup section -->
+    <div class="ast-section">
+      <h2 class="ast-section-title">{{ 'admin.settings.backupSection' | translate }}</h2>
+
+      <div class="ast-backup">
+        <div class="ast-backup__info">
+          @if (lastBackup(); as b) {
+            <span class="ast-backup__label">
+              {{ 'admin.settings.lastBackup' | translate }} <strong>{{ b.created_at | date: 'MMM d, yyyy HH:mm' }}</strong>
+            </span>
+          } @else {
+            <span class="ast-backup__label ast-backup__label--empty">{{ 'admin.settings.noBackups' | translate }}</span>
+          }
+        </div>
+        <div class="ast-backup__actions">
+          <button
+            type="button"
+            class="ast-backup-btn"
+            (click)="createBackup()"
+            [disabled]="creatingBackup()"
+          >
+            {{ creatingBackup() ? ('admin.settings.creating' | translate) : ('admin.settings.createBackup' | translate) }}
+            <span class="ast-btn-icon ast-btn-icon--plus"></span>
+          </button>
+          <button
+            type="button"
+            class="ast-backup-btn ast-backup-btn--ghost"
+            (click)="downloadBackup()"
+            [disabled]="!lastBackup()"
+          >
+            {{ 'admin.settings.downloadLast' | translate }}
+            <span class="ast-btn-icon ast-btn-icon--export"></span>
+          </button>
+          <button
+            type="button"
+            class="ast-backup-btn ast-backup-btn--ghost"
+            (click)="restoreInput.click()"
+            [disabled]="restoringBackup()"
+          >
+            {{ restoringBackup() ? ('admin.settings.restoring' | translate) : ('admin.settings.restoreBackup' | translate) }}
+            <span class="ast-btn-icon ast-btn-icon--import"></span>
+          </button>
+          <input
+            #restoreInput
+            type="file"
+            accept="application/json,.json"
+            hidden
+            (change)="restoreBackup($event)"
+          />
+        </div>
+      </div>
+    </div>
+
+    <div class="ast-form-footer">
+      <button
+        type="submit"
+        class="ast-save-btn"
+        [disabled]="settingsForm.invalid || savingSettings()"
+      >
+        {{ savingSettings() ? ('admin.settings.saving' | translate) : ('admin.settings.saveSettings' | translate) }}
+        <span class="ast-btn-icon ast-btn-icon--arrow"></span>
+      </button>
+    </div>
+  </form>
+</div>

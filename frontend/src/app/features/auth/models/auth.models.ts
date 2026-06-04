@@ -25,6 +25,7 @@ export interface UserResponse {
   created_at: string;
   avatar_url?: string | null;
   is_election_auditor?: boolean;
+  votes_cast_count?: number;
 }
 
 export interface ConfirmEmailResponse {

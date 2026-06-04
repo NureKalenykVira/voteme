@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import {
   AuthLayoutComponent,
   DecoWord,
@@ -21,6 +22,7 @@ import { containsLetter } from '../../../../shared/validators/password.validator
   imports: [
     CommonModule,
     ReactiveFormsModule,
+    TranslatePipe,
     AuthLayoutComponent,
     TextInputComponent,
     PasswordInputComponent,
@@ -37,6 +39,7 @@ export class LoginComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly authApi = inject(AuthApiService);
   private readonly storage = inject(AuthStorageService);
+  private readonly translate = inject(TranslateService);
 
   readonly loading = signal(false);
   readonly serverError = signal('');
@@ -67,15 +70,21 @@ export class LoginComponent {
       .subscribe({
         next: (resp) => {
           this.storage.setToken(resp.access_token);
-          const returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/home';
-          this.router.navigate([returnUrl]);
+          const returnUrl = this.route.snapshot.queryParams['returnUrl'];
+          if (returnUrl) {
+            this.router.navigate([returnUrl]);
+          } else if (this.storage.getRole() === 'global_admin') {
+            this.router.navigate(['/admin/users']);
+          } else {
+            this.router.navigate(['/home']);
+          }
         },
         error: (err: HttpErrorResponse) => {
           this.loading.set(false);
-          if (err.status === 401) this.serverError.set('Invalid email or password.');
+          if (err.status === 401) this.serverError.set(this.translate.instant('auth.login.errorInvalid'));
           else if (err.status === 403)
-            this.serverError.set('Please confirm your email before logging in.');
-          else this.serverError.set('Something went wrong. Please try again.');
+            this.serverError.set(this.translate.instant('auth.login.errorConfirm'));
+          else this.serverError.set(this.translate.instant('auth.login.errorGeneric'));
         },
       });
   }

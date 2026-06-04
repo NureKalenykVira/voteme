@@ -1,0 +1,90 @@
+@use '../../../styles/mixins' as mx;
+
+:host {
+  display: block;
+  background: #ffffff;
+  min-height: 100vh;
+  font-family: var(--vm-font);
+}
+
+.terms {
+  max-width: 1480px;
+  margin: 16px auto 0;
+  padding: 0 20px;
+
+  &__hero {
+    background: var(--vm-purple);
+    border-radius: 16px;
+    padding: 8px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 88px;
+    position: relative;
+    z-index: 1;
+  }
+
+  &__hero-title {
+    font-size: 32px;
+    font-weight: 800;
+    color: #ffffff;
+    margin: 0;
+    text-align: center;
+  }
+
+  &__hero-logo {
+    position: absolute;
+    right: 32px;
+    top: calc(45% + 12px);
+    transform: translateY(-50%);
+    width: 96px;
+    height: 96px;
+    background-color: var(--vm-lime);
+
+    @include mx.respond-below(mx.$bp-sm) {
+      right: 8px;
+      width: 60px;
+      height: 60px;
+    }
+    -webkit-mask: url('/assets/main/logo.svg') center / contain no-repeat;
+    mask: url('/assets/main/logo.svg') center / contain no-repeat;
+  }
+}
+
+.terms__content {
+  background: #252529;
+  margin-top: -44px;
+  padding-top: 60px;
+  padding-bottom: 60px;
+  border-bottom: 3px solid var(--vm-lime);
+}
+
+.terms__inner {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.terms__card {
+  background: #ffffff;
+  border-radius: 24px;
+  padding: 40px 48px;
+
+  h2 {
+    font-size: 18px;
+    font-weight: 800;
+    color: #1a1a2e;
+    margin: 28px 0 8px;
+
+    &:first-child {
+      margin-top: 0;
+    }
+  }
+
+  p {
+    font-size: 15px;
+    color: rgba(26, 26, 46, 0.8);
+    line-height: 1.7;
+    margin: 0 0 12px;
+  }
+}

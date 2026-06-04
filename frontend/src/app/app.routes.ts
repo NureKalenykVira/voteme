@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
+import { roleGuard } from './core/guards/role.guard';
 
 export const routes: Routes = [
   {
@@ -63,6 +64,24 @@ export const routes: Routes = [
       import('./features/audit/pages/event-log/event-log.component').then(
         (m) => m.EventLogComponent,
       ),
+  },
+  {
+    path: 'admin',
+    canActivate: [roleGuard('global_admin')],
+    loadChildren: () => import('./features/admin/admin.routes').then((m) => m.ADMIN_ROUTES),
+  },
+  {
+    path: 'faq',
+    loadComponent: () => import('./features/faq/faq.component').then((m) => m.FaqComponent),
+  },
+  {
+    path: 'privacy',
+    loadComponent: () =>
+      import('./features/privacy/privacy.component').then((m) => m.PrivacyComponent),
+  },
+  {
+    path: 'terms',
+    loadComponent: () => import('./features/terms/terms.component').then((m) => m.TermsComponent),
   },
   {
     path: '404',
