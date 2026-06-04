@@ -22,6 +22,9 @@ class Settings(BaseSettings):
     smtp_use_tls: bool = False
     frontend_url: str = "http://localhost:4200"
     app_timezone: str = "Europe/Kyiv"
+    gmail_client_id: str = ""
+    gmail_client_secret: str = ""
+    gmail_refresh_token: str = ""
 
     model_config = SettingsConfigDict(
         env_file=".env",

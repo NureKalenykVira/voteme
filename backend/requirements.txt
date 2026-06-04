@@ -17,3 +17,6 @@ apscheduler>=3.10,<4.0
 pytest
 pytest-asyncio>=0.23
 psycopg2-binary
+google-auth>=2.0.0
+google-auth-oauthlib>=1.0.0
+google-api-python-client>=2.0.0

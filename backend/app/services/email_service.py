@@ -1,8 +1,13 @@
+import asyncio
+import base64
 import logging
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
 import aiosmtplib
+from google.auth.transport.requests import Request
+from google.oauth2.credentials import Credentials
+from googleapiclient.discovery import build
 
 from app.core.config import settings
 
@@ -51,7 +56,41 @@ def _email_html(title: str, body_html: str, cta_label: str | None = None, cta_ur
 </body></html>"""
 
 
+def _send_via_gmail_api(msg: MIMEMultipart) -> None:
+    creds = Credentials(
+        token=None,
+        refresh_token=settings.gmail_refresh_token,
+        token_uri="https://oauth2.googleapis.com/token",
+        client_id=settings.gmail_client_id,
+        client_secret=settings.gmail_client_secret,
+        scopes=["https://www.googleapis.com/auth/gmail.send"],
+    )
+    creds.refresh(Request())
+    service = build("gmail", "v1", credentials=creds, cache_discovery=False)
+    raw = base64.urlsafe_b64encode(msg.as_bytes()).decode()
+    service.users().messages().send(userId="me", body={"raw": raw}).execute()
+
+
 class EmailService:
+    async def _send_message(self, msg: MIMEMultipart, raise_on_error: bool = True) -> None:
+        try:
+            if settings.gmail_refresh_token:
+                await asyncio.to_thread(_send_via_gmail_api, msg)
+            else:
+                await aiosmtplib.send(
+                    msg,
+                    hostname=settings.smtp_host,
+                    port=settings.smtp_port,
+                    username=settings.smtp_username or None,
+                    password=settings.smtp_password or None,
+                    start_tls=settings.smtp_start_tls,
+                    use_tls=settings.smtp_use_tls,
+                )
+        except Exception as exc:
+            logger.error("Failed to send email to %s: %s", msg["To"], exc)
+            if raise_on_error:
+                raise
+
     async def send_confirmation_email(self, to: str, token: str) -> None:
         confirmation_url = f"{settings.frontend_url}/auth/confirm-email?token={token}"
 
@@ -71,20 +110,8 @@ class EmailService:
         msg.attach(MIMEText(text_body, "plain"))
         msg.attach(MIMEText(html_body, "html"))
 
-        try:
-            await aiosmtplib.send(
-                msg,
-                hostname=settings.smtp_host,
-                port=settings.smtp_port,
-                username=settings.smtp_username or None,
-                password=settings.smtp_password or None,
-                start_tls=settings.smtp_start_tls,
-                use_tls=settings.smtp_use_tls,
-            )
-            logger.info("Confirmation email sent to %s", to)
-        except Exception as exc:
-            logger.error("Failed to send confirmation email to %s: %s", to, exc)
-            raise
+        await self._send_message(msg, raise_on_error=True)
+        logger.info("Confirmation email sent to %s", to)
 
     async def send_password_reset_email(self, to: str, token: str) -> None:
         reset_url = f"{settings.frontend_url}/auth/reset-password?token={token}"
@@ -105,20 +132,8 @@ class EmailService:
         msg.attach(MIMEText(text_body, "plain"))
         msg.attach(MIMEText(html_body, "html"))
 
-        try:
-            await aiosmtplib.send(
-                msg,
-                hostname=settings.smtp_host,
-                port=settings.smtp_port,
-                username=settings.smtp_username or None,
-                password=settings.smtp_password or None,
-                start_tls=settings.smtp_start_tls,
-                use_tls=settings.smtp_use_tls,
-            )
-            logger.info("Password reset email sent to %s", to)
-        except Exception as exc:
-            logger.error("Failed to send password reset email to %s: %s", to, exc)
-            raise
+        await self._send_message(msg, raise_on_error=True)
+        logger.info("Password reset email sent to %s", to)
 
     async def send_voter_invitation_email(
         self, to: str, election_title: str, join_link: str
@@ -142,19 +157,8 @@ class EmailService:
         msg.attach(MIMEText(text_body, "plain"))
         msg.attach(MIMEText(html_body, "html"))
 
-        try:
-            await aiosmtplib.send(
-                msg,
-                hostname=settings.smtp_host,
-                port=settings.smtp_port,
-                username=settings.smtp_username or None,
-                password=settings.smtp_password or None,
-                start_tls=settings.smtp_start_tls,
-                use_tls=settings.smtp_use_tls,
-            )
-            logger.info("Voter invitation email sent to %s", to)
-        except Exception as exc:
-            logger.error("Failed to send voter invitation email to %s: %s", to, exc)
+        await self._send_message(msg, raise_on_error=False)
+        logger.info("Voter invitation email sent to %s", to)
 
     async def send_voter_removed_email(
         self, to: str, election_title: str
@@ -175,19 +179,8 @@ class EmailService:
         msg.attach(MIMEText(text_body, "plain"))
         msg.attach(MIMEText(html_body, "html"))
 
-        try:
-            await aiosmtplib.send(
-                msg,
-                hostname=settings.smtp_host,
-                port=settings.smtp_port,
-                username=settings.smtp_username or None,
-                password=settings.smtp_password or None,
-                start_tls=settings.smtp_start_tls,
-                use_tls=settings.smtp_use_tls,
-            )
-            logger.info("Voter removal email sent to %s", to)
-        except Exception as exc:
-            logger.error("Failed to send voter removal email to %s: %s", to, exc)
+        await self._send_message(msg, raise_on_error=False)
+        logger.info("Voter removal email sent to %s", to)
 
     async def send_auditor_invitation_email(
         self, to: str, election_title: str, event_log_url: str
@@ -211,19 +204,8 @@ class EmailService:
         msg.attach(MIMEText(text_body, "plain"))
         msg.attach(MIMEText(html_body, "html"))
 
-        try:
-            await aiosmtplib.send(
-                msg,
-                hostname=settings.smtp_host,
-                port=settings.smtp_port,
-                username=settings.smtp_username or None,
-                password=settings.smtp_password or None,
-                start_tls=settings.smtp_start_tls,
-                use_tls=settings.smtp_use_tls,
-            )
-            logger.info("Auditor invitation email sent to %s", to)
-        except Exception as exc:
-            logger.error("Failed to send auditor invitation email to %s: %s", to, exc)
+        await self._send_message(msg, raise_on_error=False)
+        logger.info("Auditor invitation email sent to %s", to)
 
     async def send_results_email(
         self, to: str, election_title: str, results_url: str
@@ -247,19 +229,8 @@ class EmailService:
         msg.attach(MIMEText(text_body, "plain"))
         msg.attach(MIMEText(html_body, "html"))
 
-        try:
-            await aiosmtplib.send(
-                msg,
-                hostname=settings.smtp_host,
-                port=settings.smtp_port,
-                username=settings.smtp_username or None,
-                password=settings.smtp_password or None,
-                start_tls=settings.smtp_start_tls,
-                use_tls=settings.smtp_use_tls,
-            )
-            logger.info("Results email sent to %s", to)
-        except Exception as exc:
-            logger.error("Failed to send results email to %s: %s", to, exc)
+        await self._send_message(msg, raise_on_error=False)
+        logger.info("Results email sent to %s", to)
 
     async def send_election_started_email(
         self, to: str, election_title: str, join_link: str
@@ -283,16 +254,5 @@ class EmailService:
         msg.attach(MIMEText(text_body, "plain"))
         msg.attach(MIMEText(html_body, "html"))
 
-        try:
-            await aiosmtplib.send(
-                msg,
-                hostname=settings.smtp_host,
-                port=settings.smtp_port,
-                username=settings.smtp_username or None,
-                password=settings.smtp_password or None,
-                start_tls=settings.smtp_start_tls,
-                use_tls=settings.smtp_use_tls,
-            )
-            logger.info("Election started email sent to %s", to)
-        except Exception as exc:
-            logger.error("Failed to send election started email to %s: %s", to, exc)
+        await self._send_message(msg, raise_on_error=False)
+        logger.info("Election started email sent to %s", to)
