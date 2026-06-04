@@ -3,7 +3,7 @@ uvicorn[standard]
 pydantic-settings
 sqlalchemy[asyncio]
 asyncpg
-alembic
+alembic>=1.16,<2.0
 python-jose[cryptography]
 passlib[bcrypt]
 bcrypt==4.0.1
