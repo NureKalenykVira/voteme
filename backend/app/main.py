@@ -45,6 +45,7 @@ app = FastAPI(
     version="0.1.0",
     description="Backend API for VoteMe blockchain-oriented electronic voting platform.",
     lifespan=lifespan,
+    redirect_slashes=False,
 )
 
 app.add_middleware(
