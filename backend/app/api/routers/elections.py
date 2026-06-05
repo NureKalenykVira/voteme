@@ -54,7 +54,7 @@ def _organizer_or_admin():
 
 
 @router.post(
-    "/",
+    "",
     response_model=VotingResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Create a new election (draft)",
@@ -75,7 +75,7 @@ async def create_election(
 
 
 @router.get(
-    "/",
+    "",
     response_model=VotingListResponse,
     status_code=status.HTTP_200_OK,
     summary="List elections visible to the current user",
