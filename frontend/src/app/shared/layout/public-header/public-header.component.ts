@@ -2,7 +2,6 @@ import {
   ChangeDetectionStrategy,
   Component,
   HostListener,
-  OnInit,
   inject,
   signal,
 } from '@angular/core';
@@ -20,14 +19,10 @@ import { LanguageService } from '../../../core/services/language.service';
   templateUrl: './public-header.component.html',
   styleUrl: './public-header.component.scss',
 })
-export class PublicHeaderComponent implements OnInit {
+export class PublicHeaderComponent {
   readonly authStorage = inject(AuthStorageService);
   readonly language = inject(LanguageService);
   readonly menuOpen = signal(false);
-
-  ngOnInit(): void {
-    this.language.init();
-  }
 
   toggleMenu(): void {
     this.menuOpen.update((v) => !v);
