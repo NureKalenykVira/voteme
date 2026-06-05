@@ -220,7 +220,7 @@ export class CreateVotingComponent implements OnInit {
   }
 
   private toIso(date: string, time: string): string {
-    return `${date}T${time}:00`;
+    return new Date(`${date}T${time}:00`).toISOString();
   }
 
   onSubmit(action: 'draft' | 'published'): void {
