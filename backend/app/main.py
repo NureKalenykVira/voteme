@@ -6,6 +6,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
+from app.core.cloudinary_client import init_cloudinary
 from app.api.routers.admin import router as admin_router
 from app.api.routers.audit import router as audit_router
 from app.api.routers.auth import router as auth_router
@@ -23,6 +24,8 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    init_cloudinary()
+
     try:
         await catch_up_on_boot()
     except Exception:
@@ -59,8 +62,6 @@ app.add_middleware(
 # Registered after CORS so CORS stays the outermost layer.
 app.add_middleware(MaintenanceMiddleware)
 
-os.makedirs("uploads/avatars", exist_ok=True)
-os.makedirs("uploads/ballot_options", exist_ok=True)
 os.makedirs("uploads/backups", exist_ok=True)
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 

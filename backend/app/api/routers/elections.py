@@ -1,7 +1,5 @@
 import uuid
-from pathlib import Path
 
-import aiofiles
 from fastapi import APIRouter, Depends, File, HTTPException, Query, Request, UploadFile, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -33,6 +31,7 @@ from app.schemas.voting import (
     VotingResponse,
     VotingUpdateRequest,
 )
+from app.core.cloudinary_client import upload_image
 from app.services.voting_service import VotingService
 from app.services.vote_service import VoteService
 
@@ -43,9 +42,7 @@ vote_router = APIRouter(tags=["Voting"])
 _voting_service = VotingService()
 _vote_service = VoteService()
 
-_BALLOT_PHOTO_DIR = Path("uploads/ballot_options")
 _ALLOWED_PHOTO_CONTENT_TYPES = {"image/jpeg", "image/png", "image/webp"}
-_PHOTO_EXT_MAP = {"image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp"}
 _MAX_PHOTO_BYTES = 5 * 1024 * 1024
 
 
@@ -429,14 +426,7 @@ async def upload_ballot_option_photo(
             detail="Photo exceeds the 5 MB size limit",
         )
 
-    ext = _PHOTO_EXT_MAP[file.content_type]
-    _BALLOT_PHOTO_DIR.mkdir(parents=True, exist_ok=True)
-    file_path = _BALLOT_PHOTO_DIR / f"{option_id}{ext}"
-
-    async with aiofiles.open(file_path, "wb") as f:
-        await f.write(contents)
-
-    photo_url = f"/uploads/ballot_options/{option_id}{ext}"
+    photo_url = await upload_image(contents, folder="ballot_options", public_id=str(option_id))
     option = await _voting_service.set_option_photo(
         session, current_user, election_id, option_id, photo_url
     )

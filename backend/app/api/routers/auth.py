@@ -1,6 +1,3 @@
-import aiofiles
-from pathlib import Path
-
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -22,6 +19,7 @@ from app.schemas.auth import (
     UpdateProfileRequest,
     UserResponse,
 )
+from app.core.cloudinary_client import upload_image
 from app.services.auth_service import AuthService
 
 
@@ -184,8 +182,6 @@ async def reset_password(
 
 
 _ALLOWED_CONTENT_TYPES = {"image/jpeg", "image/png", "image/webp"}
-_EXT_MAP = {"image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp"}
-_AVATARS_DIR = Path("uploads/avatars")
 
 
 @router.post(
@@ -209,15 +205,8 @@ async def upload_avatar(
             detail="Only JPEG, PNG, and WebP images are allowed",
         )
 
-    ext = _EXT_MAP[file.content_type]
-    _AVATARS_DIR.mkdir(parents=True, exist_ok=True)
-    file_path = _AVATARS_DIR / f"{current_user.id}{ext}"
-
     contents = await file.read()
-    async with aiofiles.open(file_path, "wb") as f:
-        await f.write(contents)
-
-    avatar_url = f"/uploads/avatars/{current_user.id}{ext}"
+    avatar_url = await upload_image(contents, folder="avatars", public_id=str(current_user.id))
     user = await _user_repo.update(session, current_user, avatar_url=avatar_url)
     await session.commit()
     await session.refresh(user)
