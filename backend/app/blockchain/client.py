@@ -20,7 +20,7 @@ _lock: asyncio.Lock = asyncio.Lock()
 _abi_cache: Optional[list] = None
 _abi_lock: asyncio.Lock = asyncio.Lock()
 
-_ABI_PATH = Path(__file__).resolve().parents[3] / "contracts" / "abi" / "VoteRegistry.json"
+_ABI_PATH = Path(__file__).resolve().parents[2] / "contracts" / "abi" / "VoteRegistry.json"
 
 _DEFAULT_GAS_LIMIT = 300_000
 _TX_NONCE_LOCK: asyncio.Lock = asyncio.Lock()
