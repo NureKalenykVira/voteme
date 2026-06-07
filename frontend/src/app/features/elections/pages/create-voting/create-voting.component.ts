@@ -21,7 +21,6 @@ import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { catchError, concatMap, forkJoin, from, of, switchMap, tap, toArray } from 'rxjs';
 import { VotingOptionCardComponent } from '../../../../shared/ui/voting-option-card/voting-option-card.component';
 import { TextInputComponent } from '../../../../shared/ui/text-input/text-input.component';
-import { CheckboxComponent } from '../../../../shared/ui/checkbox/checkbox.component';
 import { DatePickerComponent } from '../../../../shared/ui/date-picker/date-picker.component';
 import { TimePickerComponent } from '../../../../shared/ui/time-picker/time-picker.component';
 import { AuthApiService } from '../../../auth/services/auth-api.service';
@@ -59,7 +58,6 @@ function notInPastValidator(
     ReactiveFormsModule,
     VotingOptionCardComponent,
     TextInputComponent,
-    CheckboxComponent,
     DatePickerComponent,
     TimePickerComponent,
     TranslatePipe,
@@ -93,7 +91,6 @@ export class CreateVotingComponent implements OnInit {
     startTime: ['', Validators.required],
     endDate: ['', Validators.required],
     endTime: ['', Validators.required],
-    anonymous: [false],
     options: this.fb.array([this.createOption(), this.createOption()]),
   });
 
@@ -130,7 +127,6 @@ export class CreateVotingComponent implements OnInit {
           startTime,
           endDate,
           endTime,
-          anonymous: election.is_anonymous,
         });
 
         this.electionStatus.set(election.status);
@@ -240,7 +236,7 @@ export class CreateVotingComponent implements OnInit {
       title: v.title!,
       description: v.description ?? undefined,
       access_type: 'private',
-      is_anonymous: v.anonymous ?? false,
+      is_anonymous: false,
       start_date_time: this.toIso(v.startDate!, v.startTime!),
       end_date_time: this.toIso(v.endDate!, v.endTime!),
     };
@@ -328,7 +324,7 @@ export class CreateVotingComponent implements OnInit {
       title: v.title!,
       description: v.description ?? undefined,
       access_type: 'private',
-      is_anonymous: v.anonymous ?? false,
+      is_anonymous: false,
       start_date_time: this.toIso(v.startDate!, v.startTime!),
       end_date_time: this.toIso(v.endDate!, v.endTime!),
     };
