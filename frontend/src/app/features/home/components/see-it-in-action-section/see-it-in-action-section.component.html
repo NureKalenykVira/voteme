@@ -8,10 +8,31 @@
     </header>
 
     <div class="sia__grid">
-      <div class="sia__video" role="img" aria-label="Product walkthrough video preview">
-        <button type="button" class="sia__play" aria-label="Play walkthrough video">
-          <span class="sia__play-icon" aria-hidden="true"></span>
-        </button>
+      <div class="sia__video">
+        <video
+          #videoEl
+          class="sia__video-el"
+          [src]="videoUrl"
+          [controls]="isPlaying()"
+          muted
+          playsinline
+          preload="metadata"
+          aria-label="Product walkthrough video"
+          (click)="togglePlayback()"
+          (play)="onVideoPlay()"
+          (pause)="onVideoPause()"
+          (ended)="onVideoEnded()"
+        ></video>
+        @if (!isPlaying()) {
+          <button
+            type="button"
+            class="sia__play"
+            aria-label="Play walkthrough video"
+            (click)="togglePlayback()"
+          >
+            <span class="sia__play-icon" aria-hidden="true"></span>
+          </button>
+        }
       </div>
 
       <div class="sia__note">

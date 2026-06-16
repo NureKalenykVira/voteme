@@ -71,7 +71,17 @@
     }
   }
 
+  &__video-el {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    background: #16151f;
+    object-fit: cover;
+  }
+
   &__play {
+    position: absolute;
     display: inline-flex;
     align-items: center;
     justify-content: center;
